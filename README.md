@@ -14,7 +14,8 @@ A beautiful and functional weather application built with Flutter that provides 
 
 ## Screenshots
 
-[Insert app screenshots here]
+https://github.com/user-attachments/assets/e267abd7-546a-41d2-b482-8845fda81f40
+
 
 ## Technologies Used
 
