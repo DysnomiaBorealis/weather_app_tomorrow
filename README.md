@@ -9,9 +9,8 @@ A beautiful and functional weather application built with Flutter that provides 
 - Weather condition visualizations with corresponding icons
 - Location-based weather services
 - Ability to search for weather in different cities
-- Beautiful UI with smooth transitions and animations
-- Light and dark theme support
-
+- Decent UI with smooth transitions and animations
+  
 ## Screenshots
 
 https://github.com/user-attachments/assets/e267abd7-546a-41d2-b482-8845fda81f40
