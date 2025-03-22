@@ -75,5 +75,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Acknowledgements
 
 - Weather data provided by [Tomorrow.io](https://www.tomorrow.io/)
-- Icons designed by [Your Icon Source]
+- Icons designed by https://www.tomorrow.io/
 - Special thanks to all contributors and testers
