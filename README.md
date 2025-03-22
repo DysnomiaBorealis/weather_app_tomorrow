@@ -60,9 +60,7 @@ https://github.com/user-attachments/assets/e267abd7-546a-41d2-b482-8845fda81f40
 
 - Upon launching the app, it will request permission to access your location
 - The app will display the current weather for your location
-- Use the search bar to check weather information for other cities
-- Swipe down to refresh the weather data
-- Toggle between light and dark themes in the settings
+- Use the city button to check weather information for other cities
 
 ## Contributing
 
