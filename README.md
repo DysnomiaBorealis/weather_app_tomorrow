@@ -39,7 +39,7 @@ https://github.com/user-attachments/assets/e267abd7-546a-41d2-b482-8845fda81f40
 
 1. Clone the repository
    ```
-   git clone https://github.com/yourusername/weather_app.git
+   git clone [https://github.com/yourusername/weather_app.git](https://github.com/DysnomiaBorealis/weather_app_tomorrow)
    ```
 
 2. Navigate to the project directory
