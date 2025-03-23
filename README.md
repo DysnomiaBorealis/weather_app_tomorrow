@@ -13,6 +13,8 @@ A beautiful and functional weather application built with Flutter that provides 
   
 ## Screenshots
 
+For Browser
+
 https://github.com/user-attachments/assets/e267abd7-546a-41d2-b482-8845fda81f40
 
 
@@ -43,7 +45,7 @@ https://github.com/user-attachments/assets/e267abd7-546a-41d2-b482-8845fda81f40
 
 2. Navigate to the project directory
    ```
-   cd weather_app
+   cd weather_app and locate 
    ```
 
 3. Install dependencies
@@ -55,6 +57,8 @@ https://github.com/user-attachments/assets/e267abd7-546a-41d2-b482-8845fda81f40
    ```
    flutter run
    ```
+
+5. Update the api file, locate to the lib/api and choose key.dart, change it based on your own key
 
 ## Usage
 
