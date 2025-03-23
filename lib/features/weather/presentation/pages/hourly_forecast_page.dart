@@ -328,20 +328,8 @@ class _HourlyForecastPageState extends State<HourlyForecastPage>
                           padding: const EdgeInsets.all(8.0),
                           child: Row(
                             children: [
-                              ExtendedImage.network(
-                                weather
-                                    .icon, // Changed to use icon directly like current_weather_page does
-                                height: 70,
-                                width: 70,
-                                cache: true,
-                                loadStateChanged: (state) {
-                                  if (state.extendedImageLoadState ==
-                                      LoadState.loading) {
-                                    return const CircularProgressIndicator();
-                                  }
-                                  return null;
-                                },
-                              ),
+                              _buildWeatherIcon(
+                                  weather.icon, weather.description),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -438,6 +426,108 @@ class _HourlyForecastPageState extends State<HourlyForecastPage>
           ),
           foreground(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildWeatherIcon(String iconPath, String description) {
+    // Check if it's a local asset path
+    if (iconPath.startsWith('assets/')) {
+      return ExtendedImage.asset(
+        iconPath,
+        height: 70,
+        width: 70,
+        fit: BoxFit.contain,
+        loadStateChanged: (state) {
+          switch (state.extendedImageLoadState) {
+            case LoadState.loading:
+              return const Center(
+                child: SizedBox(
+                  width: 30,
+                  height: 30,
+                  child: CircularProgressIndicator(
+                    color: Colors.white54,
+                    strokeWidth: 2,
+                  ),
+                ),
+              );
+            case LoadState.failed:
+              debugPrint('Failed to load asset image: $iconPath');
+              return _getWeatherFallbackIcon(description);
+            case LoadState.completed:
+              return null; // Return null to display the loaded image
+          }
+        },
+      );
+    }
+    // It's a network URL
+    else {
+      return ExtendedImage.network(
+        iconPath.startsWith('https')
+            ? iconPath
+            : iconPath.replaceFirst('http', 'https'),
+        height: 70,
+        width: 70,
+        cache: true,
+        enableLoadState: true,
+        handleLoadingProgress: true,
+        retries: 3,
+        timeLimit: const Duration(seconds: 15),
+        loadStateChanged: (state) {
+          switch (state.extendedImageLoadState) {
+            case LoadState.loading:
+              return const Center(
+                child: SizedBox(
+                  width: 30,
+                  height: 30,
+                  child: CircularProgressIndicator(
+                    color: Colors.white54,
+                    strokeWidth: 2,
+                  ),
+                ),
+              );
+            case LoadState.failed:
+              debugPrint('Failed to load network image: $iconPath');
+              return _getWeatherFallbackIcon(description);
+            case LoadState.completed:
+              return null; // Return null to display the loaded image
+          }
+        },
+      );
+    }
+  }
+
+  Widget _getWeatherFallbackIcon(String description) {
+    final desc = description.toLowerCase();
+    IconData iconData;
+
+    if (desc.contains('clear') || desc.contains('sunny')) {
+      iconData = Icons.wb_sunny;
+    } else if (desc.contains('cloud')) {
+      iconData = Icons.cloud;
+    } else if (desc.contains('rain') || desc.contains('shower')) {
+      iconData = Icons.beach_access;
+    } else if (desc.contains('snow') || desc.contains('sleet')) {
+      iconData = Icons.ac_unit;
+    } else if (desc.contains('thunder') || desc.contains('storm')) {
+      iconData = Icons.flash_on;
+    } else if (desc.contains('mist') || desc.contains('fog')) {
+      iconData = Icons.cloud_queue;
+    } else {
+      iconData = Icons.cloud;
+    }
+
+    return Container(
+      height: 70,
+      width: 70,
+      decoration: BoxDecoration(
+        color: Colors.white10,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(
+        iconData,
+        color: Colors.white70,
+        size: 40,
       ),
     );
   }

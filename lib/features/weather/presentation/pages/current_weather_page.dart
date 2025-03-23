@@ -852,11 +852,11 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
         if (state is CurrentWeatherLoaded) {
           final weather = state.data;
           return SingleChildScrollView(
-            // Add this wrapper
             physics: const BouncingScrollPhysics(),
             child: Padding(
               key: const Key('weather_loaded'),
-              padding: const EdgeInsets.all(20),
+              // Increase bottom padding by 1 more pixel to fix the overflow
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 151),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -939,7 +939,7 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
                       ],
                     ),
                   ),
-                  DView.height(50),
+                  DView.height(25), // Further reduced from 30
                   GridView(
                     padding: const EdgeInsets.all(0),
                     physics: const NeverScrollableScrollPhysics(),
@@ -947,7 +947,8 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      mainAxisExtent: 60,
+                      // Further reduced to ensure no overflow
+                      mainAxisExtent: 54,
                       mainAxisSpacing: 8,
                       crossAxisSpacing: 8,
                     ),
@@ -977,6 +978,8 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
                       ),
                     ],
                   ),
+                  // Even more bottom padding
+                  SizedBox(height: MediaQuery.of(context).padding.bottom + 30),
                 ],
               ),
             ),
@@ -987,6 +990,7 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
     );
   }
 
+  // Make the stat items slightly more compact
   Widget itemStat({
     required IconData icon,
     required String title,
@@ -998,7 +1002,7 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
         borderRadius: BorderRadius.circular(10),
       ),
       padding: const EdgeInsets.symmetric(
-        vertical: 8,
+        vertical: 5, // Further reduced from 6
         horizontal: 12,
       ),
       child: Row(
@@ -1006,30 +1010,33 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
           CircleAvatar(
             backgroundColor: Colors.white,
             foregroundColor: Theme.of(context).primaryColor,
-            radius: 18,
-            child: Icon(icon),
+            radius: 15, // Further reduced from 16
+            child: Icon(icon, size: 15), // Further reduced from 16
           ),
           DView.width(6),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.white70,
+          Expanded(
+            // Wrap in Expanded to prevent text overflow
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 11, // Reduced from 12
+                    color: Colors.white70,
+                  ),
                 ),
-              ),
-              Text(
-                data,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                Text(
+                  data,
+                  style: const TextStyle(
+                    fontSize: 13, // Reduced from 14
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -1039,169 +1046,177 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // FIRST LAYER: Background gradient
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFF4A9EF7), Color(0xFFDDEAF9)],
-              ),
-            ),
-          ),
-
-          // SECOND LAYER: Animated background - The key fix is here!
-          // Moving this up in the stack ensures it's visible beneath other elements
-          _showLottieAnimation
-              ? _buildLottieAnimation(_getCurrentWeatherDescription())
-              : _buildCustomAnimations(),
-
-          // THIRD LAYER: Shadows
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height / 2,
-              width: double.infinity,
-              child: const BasicShadow(topDown: false),
-            ),
-          ),
-          SizedBox(
-            height: MediaQuery.of(context).size.height / 8,
-            width: double.infinity,
-            child: const BasicShadow(topDown: true),
-          ),
-
-          // FOURTH LAYER: UI elements (header and content)
-          Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(
-                  left: 20,
-                  top: 50,
-                  right: 20,
-                ),
-                child: headerAction(),
-              ),
-              Expanded(
-                child: foreground(),
-              ),
-            ],
-          ),
-
-          // FIFTH LAYER: Animation controls always on top
-          // Redesigned toggle button that better aligns with the weather theme
-          Positioned(
-            top: 200,
-            right: 20,
-            child: Container(
-              height: 70,
-              width: 70,
-              decoration: BoxDecoration(
-                // Use a weather-themed gradient instead of solid colors
+      // Remove extra padding on the screen
+      resizeToAvoidBottomInset: false,
+      body: SafeArea(
+        // Enable bottom safe area to properly handle system UI
+        bottom: true,
+        child: Stack(
+          children: [
+            // FIRST LAYER: Background gradient
+            Container(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: _showLottieAnimation
-                      ? [const Color(0xFF48CAE4), const Color(0xFF0096C7)]
-                      : [const Color(0xFF90E0EF), const Color(0xFF48CAE4)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF4A9EF7), Color(0xFFDDEAF9)],
                 ),
-                borderRadius: BorderRadius.circular(35),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 10,
-                    spreadRadius: 1,
-                  ),
-                  BoxShadow(
-                    color: Colors.white.withOpacity(0.2),
-                    blurRadius: 5,
-                    spreadRadius: -1,
-                    offset: const Offset(-2, -2),
-                  ),
-                ],
               ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
+            ),
+
+            // SECOND LAYER: Animated background - The key fix is here!
+            // Moving this up in the stack ensures it's visible beneath other elements
+            _showLottieAnimation
+                ? _buildLottieAnimation(_getCurrentWeatherDescription())
+                : _buildCustomAnimations(),
+
+            // THIRD LAYER: Shadows
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height / 2,
+                width: double.infinity,
+                child: const BasicShadow(topDown: false),
+              ),
+            ),
+            SizedBox(
+              height: MediaQuery.of(context).size.height / 8,
+              width: double.infinity,
+              child: const BasicShadow(topDown: true),
+            ),
+
+            // FOURTH LAYER: UI elements (header and content)
+            Column(
+              children: [
+                Padding(
+                  // Adjust top padding since we're using SafeArea now
+                  padding: const EdgeInsets.only(
+                    left: 20,
+                    top: 10, // Reduced from 20
+                    right: 20,
+                  ),
+                  child: headerAction(),
+                ),
+                Expanded(
+                  child: foreground(),
+                ),
+              ],
+            ),
+
+            // FIFTH LAYER: Animation controls always on top
+            // Redesigned toggle button that better aligns with the weather theme
+            Positioned(
+              top: 200,
+              right: 20,
+              child: Container(
+                height: 70,
+                width: 70,
+                decoration: BoxDecoration(
+                  // Use a weather-themed gradient instead of solid colors
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: _showLottieAnimation
+                        ? [const Color(0xFF48CAE4), const Color(0xFF0096C7)]
+                        : [const Color(0xFF90E0EF), const Color(0xFF48CAE4)],
+                  ),
                   borderRadius: BorderRadius.circular(35),
-                  onTap: () {
-                    print(
-                        "ANIMATION TOGGLE PRESSED - Current: $_showLottieAnimation");
-                    setState(() {
-                      _showLottieAnimation = !_showLottieAnimation;
-                    });
-                    // Force rebuild
-                    Future.delayed(Duration.zero, () {
-                      setState(() {});
-                    });
-                  },
-                  child: Center(
-                    child: Icon(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 10,
+                      spreadRadius: 1,
+                    ),
+                    BoxShadow(
+                      color: Colors.white.withOpacity(0.2),
+                      blurRadius: 5,
+                      spreadRadius: -1,
+                      offset: const Offset(-2, -2),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(35),
+                    onTap: () {
+                      print(
+                          "ANIMATION TOGGLE PRESSED - Current: $_showLottieAnimation");
+                      setState(() {
+                        _showLottieAnimation = !_showLottieAnimation;
+                      });
+                      // Force rebuild
+                      Future.delayed(Duration.zero, () {
+                        setState(() {});
+                      });
+                    },
+                    child: Center(
+                      child: Icon(
+                        _showLottieAnimation ? Icons.auto_awesome : Icons.waves,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Animation mode indicator with weather-themed appearance
+            Positioned(
+              top: 280,
+              right: 20,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  // Use a weather-theme gradient that matches the button
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: _showLottieAnimation
+                        ? [const Color(0xFF48CAE4), const Color(0xFF0096C7)]
+                        : [const Color(0xFF90E0EF), const Color(0xFF48CAE4)],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.25),
+                      blurRadius: 4,
+                      spreadRadius: 0,
+                    ),
+                    BoxShadow(
+                      color: Colors.white.withOpacity(0.1),
+                      blurRadius: 4,
+                      spreadRadius: 0,
+                      offset: const Offset(-1, -1),
+                    )
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
                       _showLottieAnimation ? Icons.auto_awesome : Icons.waves,
                       color: Colors.white,
-                      size: 30,
+                      size: 16,
                     ),
-                  ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _showLottieAnimation ? "LOTTIE" : "CUSTOM",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
-
-          // Animation mode indicator with weather-themed appearance
-          Positioned(
-            top: 280,
-            right: 20,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                // Use a weather-theme gradient that matches the button
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: _showLottieAnimation
-                      ? [const Color(0xFF48CAE4), const Color(0xFF0096C7)]
-                      : [const Color(0xFF90E0EF), const Color(0xFF48CAE4)],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.25),
-                    blurRadius: 4,
-                    spreadRadius: 0,
-                  ),
-                  BoxShadow(
-                    color: Colors.white.withOpacity(0.1),
-                    blurRadius: 4,
-                    spreadRadius: 0,
-                    offset: const Offset(-1, -1),
-                  )
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    _showLottieAnimation ? Icons.auto_awesome : Icons.waves,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    _showLottieAnimation ? "LOTTIE" : "CUSTOM",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
