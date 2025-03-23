@@ -15,7 +15,9 @@ A beautiful and functional weather application built with Flutter that provides 
 
 For Browser
 
-https://github.com/user-attachments/assets/e267abd7-546a-41d2-b482-8845fda81f40
+
+
+https://github.com/user-attachments/assets/4d7d866f-ef79-48bc-be29-baa3acae0203
 
 
 ## Technologies Used
@@ -27,6 +29,7 @@ https://github.com/user-attachments/assets/e267abd7-546a-41d2-b482-8845fda81f40
 - Optional: Geolocator for device location services (omit if using only API-provided locations)
 - HTTP package for API requests
 - Shared preferences for local storage
+- Lottie and Flutter built-in for animations
 
 ## Getting Started
 
@@ -63,7 +66,7 @@ https://github.com/user-attachments/assets/e267abd7-546a-41d2-b482-8845fda81f40
 ## Usage
 
 - Upon launching the app, it will request permission to access your location
-- The app will display the current weather for your location
+- The app will display the current weather for the locations that have been chosen
 - Use the city button to check weather information for other cities
 
 ## Contributing
