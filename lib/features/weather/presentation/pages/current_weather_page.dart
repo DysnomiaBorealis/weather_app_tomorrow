@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:d_view/d_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,7 +19,7 @@ class CurrentWeatherPage extends StatefulWidget {
 }
 
 class _CurrentWeatherPageState extends State<CurrentWeatherPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _cloudAnimation;
   late Animation<double> _cloud2Animation;
@@ -27,6 +28,11 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
   late Animation<double> _sunRotationAnimation;
   late Animation<double> _sunScaleAnimation;
   late Animation<double> _rainAnimation;
+
+  // Add animation controller for Lottie movement
+  late AnimationController _lottiePositionController;
+  late Animation<double> _lottieXAnimation;
+  late Animation<double> _lottieYAnimation;
 
   // Rain and thunder control variables
   bool _isRaining = false;
@@ -41,6 +47,16 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
   // Key for more reliable rebuilding
   final GlobalKey _animationKey = GlobalKey();
 
+  // Add refresh button animation controller
+  late AnimationController _refreshRotationController;
+  late Animation<double> _refreshRotationAnimation;
+
+  // Add animation controllers for each button
+  late AnimationController _cityButtonController;
+  late AnimationController _hourlyButtonController;
+  late Animation<double> _cityScaleAnimation;
+  late Animation<double> _hourlyScaleAnimation;
+
   refresh() {
     context.read<CurrentWeatherBloc>().add(OnGetCurrentWeather());
   }
@@ -51,6 +67,36 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
       vsync: this,
       duration: const Duration(seconds: 10),
     )..repeat(reverse: true);
+
+    // Lottie movement controller - longer duration for smoother traversal
+    _lottiePositionController = AnimationController(
+      vsync: this,
+      duration:
+          const Duration(seconds: 45), // Longer duration for smoother effect
+    )..repeat(reverse: false); // Changed to not reverse for continuous movement
+
+    // Lottie X position animation (horizontal movement) - wider range
+    _lottieXAnimation = Tween<double>(
+      begin: -100.0, // Increased range
+      end: 100.0, // Increased range
+    ).animate(
+      CurvedAnimation(
+        parent: _lottiePositionController,
+        curve: Curves.easeInOutSine, // Changed curve for more natural movement
+      ),
+    );
+
+    // Lottie Y position animation (vertical movement) - wider range
+    _lottieYAnimation = Tween<double>(
+      begin: -80.0, // Increased range
+      end: 80.0, // Increased range
+    ).animate(
+      CurvedAnimation(
+        parent: _lottiePositionController,
+        // Using a different interval for Y to create elliptical path
+        curve: const Interval(0.0, 1.0, curve: Curves.easeInOutCubic),
+      ),
+    );
 
     // Cloud floating animation
     _cloudAnimation = Tween<double>(
@@ -164,6 +210,48 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
       });
     });
 
+    // Initialize refresh rotation animation
+    _refreshRotationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
+
+    _refreshRotationAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _refreshRotationController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Initialize city button animation
+    _cityButtonController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+
+    _cityScaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(
+      parent: _cityButtonController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Initialize hourly button animation
+    _hourlyButtonController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+
+    _hourlyScaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(
+      parent: _hourlyButtonController,
+      curve: Curves.easeInOut,
+    ));
+
     refresh();
     super.initState();
   }
@@ -171,6 +259,10 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
   @override
   void dispose() {
     _animationController.dispose();
+    _refreshRotationController.dispose();
+    _cityButtonController.dispose();
+    _hourlyButtonController.dispose();
+    _lottiePositionController.dispose(); // Dispose the new controller
     _rainTimer?.cancel();
     _thunderTimer?.cancel();
     super.dispose();
@@ -190,6 +282,8 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
       return 'assets/animations/snow.json';
     } else if (condition.contains('cloud')) {
       return 'assets/animations/cloudy.json';
+    } else if (condition.contains('fog')) {
+      return 'assets/animations/foggy.json';
     } else {
       return 'assets/animations/sunny.json';
     }
@@ -487,29 +581,36 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
         "⚡ Building Lottie animation: $animationPath for weather: $weatherDescription");
 
     return Positioned.fill(
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildWeatherAnimation(animationPath, weatherDescription),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                'Weather: ${weatherDescription.capitalize}',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+      child: AnimatedBuilder(
+        animation: _lottiePositionController,
+        builder: (context, child) {
+          // Calculate a more interesting path (figure-8 or circular pattern)
+          // Using sin/cos functions to create circular motion
+          final double phi =
+              _lottiePositionController.value * 2 * 3.14159; // Full circle
+          final double radius = 70.0; // Radius of movement
+
+          // Calculate offset based on sine and cosine for a more natural movement
+          final xOffset = _lottieXAnimation.value * 0.7 +
+              radius * sin(phi) * 0.3; // Combine linear and circular motion
+          final yOffset = _lottieYAnimation.value * 0.7 +
+              radius *
+                  cos(phi * 2) *
+                  0.3; // Frequency doubled for figure-8 pattern
+
+          return Transform.translate(
+            offset: Offset(xOffset, yOffset),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildWeatherAnimation(animationPath, weatherDescription),
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -591,6 +692,9 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
       children: [
         buttonAction(
           onTap: () {
+            _cityButtonController
+                .forward()
+                .then((_) => _cityButtonController.reverse());
             Navigator.pushNamed(
               context,
               AppRoute.pickPlace.name,
@@ -600,21 +704,59 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
             });
           },
           title: 'City',
-          icon: Icons.edit,
-        ),
-        DView.width(8),
-        buttonAction(
-          onTap: () => refresh(),
-          title: 'Refresh',
-          icon: Icons.refresh,
+          icon: Icons.location_on,
+          animationController: _cityButtonController,
+          scaleAnimation: _cityScaleAnimation,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF64B5F6), Color(0xFF1976D2)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
         DView.width(8),
         buttonAction(
           onTap: () {
+            // Add refresh animation effect
+            _refreshRotationController.reset();
+            _refreshRotationController.forward();
+            refresh();
+          },
+          title: 'Refresh',
+          icon: Icons.refresh,
+          customIconWidget: RotationTransition(
+            turns: _refreshRotationAnimation,
+            child: const Icon(
+              Icons.refresh,
+              size: 12,
+              color: Colors.white,
+            ),
+          ),
+          gradient: const LinearGradient(
+            colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        DView.width(8),
+        buttonAction(
+          onTap: () {
+            _hourlyButtonController
+                .forward()
+                .then((_) => _hourlyButtonController.reverse());
             Navigator.pushNamed(context, AppRoute.hourlyForecast.name);
           },
           title: 'Hourly',
           icon: Icons.access_time,
+          animationController: _hourlyButtonController,
+          scaleAnimation: _hourlyScaleAnimation,
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFF9C27B0),
+              Color(0xFF6A1B9A)
+            ], // Purple gradient instead of orange
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
       ],
     );
@@ -624,30 +766,64 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
     required VoidCallback onTap,
     required String title,
     required IconData icon,
+    Widget? customIconWidget,
+    required Gradient gradient,
+    AnimationController? animationController,
+    Animation<double>? scaleAnimation,
   }) {
-    return Expanded(
-      child: Material(
-        color: Colors.white.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(30),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(30),
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.white,
-                  ),
-                ),
-                DView.width(4),
-                Icon(icon, size: 12, color: Colors.white),
-              ],
+    Widget buttonContent = Padding(
+      padding: const EdgeInsets.all(8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.white,
             ),
+          ),
+          DView.width(4),
+          customIconWidget ?? Icon(icon, size: 12, color: Colors.white),
+        ],
+      ),
+    );
+
+    // If we have animation controllers, wrap in animated builder
+    if (animationController != null && scaleAnimation != null) {
+      buttonContent = AnimatedBuilder(
+        animation: animationController,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: scaleAnimation.value,
+            child: child,
+          );
+        },
+        child: buttonContent,
+      );
+    }
+
+    return Expanded(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 2,
+              offset: const Offset(0, 1),
+            )
+          ],
+          gradient: gradient,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(30),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(30),
+            child: buttonContent,
           ),
         ),
       ),
@@ -915,29 +1091,42 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
           ),
 
           // FIFTH LAYER: Animation controls always on top
-          // Toggle button
+          // Redesigned toggle button that better aligns with the weather theme
           Positioned(
             top: 200,
             right: 20,
-            child: Material(
-              elevation: 8,
-              shadowColor: _showLottieAnimation
-                  ? Colors.green.withOpacity(0.5)
-                  : Colors.blue.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(35),
-              child: Container(
-                height: 70,
-                width: 70,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(35),
-                  border: Border.all(
-                    color: _showLottieAnimation ? Colors.green : Colors.blue,
-                    width: 2,
-                  ),
+            child: Container(
+              height: 70,
+              width: 70,
+              decoration: BoxDecoration(
+                // Use a weather-themed gradient instead of solid colors
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: _showLottieAnimation
+                      ? [const Color(0xFF48CAE4), const Color(0xFF0096C7)]
+                      : [const Color(0xFF90E0EF), const Color(0xFF48CAE4)],
                 ),
-                child: FloatingActionButton(
-                  heroTag: 'animToggleFixed',
-                  onPressed: () {
+                borderRadius: BorderRadius.circular(35),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  ),
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.2),
+                    blurRadius: 5,
+                    spreadRadius: -1,
+                    offset: const Offset(-2, -2),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(35),
+                  onTap: () {
                     print(
                         "ANIMATION TOGGLE PRESSED - Current: $_showLottieAnimation");
                     setState(() {
@@ -948,21 +1137,19 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
                       setState(() {});
                     });
                   },
-                  backgroundColor:
-                      _showLottieAnimation ? Colors.green : Colors.blue,
-                  child: Icon(
-                    _showLottieAnimation
-                        ? Icons.animation
-                        : Icons.animation_outlined,
-                    color: Colors.white,
-                    size: 30,
+                  child: Center(
+                    child: Icon(
+                      _showLottieAnimation ? Icons.auto_awesome : Icons.waves,
+                      color: Colors.white,
+                      size: 30,
+                    ),
                   ),
                 ),
               ),
             ),
           ),
 
-          // Animation mode indicator
+          // Animation mode indicator with weather-themed appearance
           Positioned(
             top: 280,
             right: 20,
@@ -970,13 +1157,26 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
               duration: const Duration(milliseconds: 300),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: _showLottieAnimation ? Colors.green : Colors.blue,
+                // Use a weather-theme gradient that matches the button
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: _showLottieAnimation
+                      ? [const Color(0xFF48CAE4), const Color(0xFF0096C7)]
+                      : [const Color(0xFF90E0EF), const Color(0xFF48CAE4)],
+                ),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black54,
+                    color: Colors.black.withOpacity(0.25),
                     blurRadius: 4,
-                    spreadRadius: 1,
+                    spreadRadius: 0,
+                  ),
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.1),
+                    blurRadius: 4,
+                    spreadRadius: 0,
+                    offset: const Offset(-1, -1),
                   )
                 ],
               ),
@@ -984,7 +1184,7 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    _showLottieAnimation ? Icons.check_circle : Icons.sync,
+                    _showLottieAnimation ? Icons.auto_awesome : Icons.waves,
                     color: Colors.white,
                     size: 16,
                   ),

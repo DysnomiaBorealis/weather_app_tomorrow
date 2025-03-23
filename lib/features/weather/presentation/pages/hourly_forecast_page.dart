@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:grouped_list/grouped_list.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:weather_app_tommorow/common/enum.dart';
 import 'package:weather_app_tommorow/common/extension.dart';
 import 'package:weather_app_tommorow/features/weather/domain/entity/weather_entity.dart';
 import 'package:weather_app_tommorow/features/weather/presentation/bloc/hourly_forecast/hourly_forecast_bloc.dart';

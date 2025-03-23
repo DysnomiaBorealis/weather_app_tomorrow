@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart'; // Add this import for DragStartBehavior
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-import 'package:weather_app_tommorow/common/enum.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -72,6 +72,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           // Page View
           PageView.builder(
             controller: _pageController,
+            physics:
+                const ClampingScrollPhysics(), // Changed to ClampingScrollPhysics for better swipe feel
+            dragStartBehavior:
+                DragStartBehavior.down, // Improves drag sensitivity
             itemCount: _onboardingItems.length,
             onPageChanged: (index) {
               setState(() {
@@ -84,25 +88,65 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             },
           ),
 
-          // Skip button
+          // Skip button - with gradient matching the background
           Positioned(
             top: 50,
             right: 20,
             child: !_isLastPage
-                ? TextButton(
-                    onPressed: () {
-                      _pageController.animateToPage(
-                        _onboardingItems.length - 1,
-                        duration: const Duration(milliseconds: 600),
-                        curve: Curves.easeInOut,
-                      );
-                    },
-                    child: const Text(
-                      "Skip",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                ? Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF4A9EF7), Color(0xFF6FB1F8)],
+                      ),
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.4),
+                        width: 1,
+                      ),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(30),
+                        onTap: () {
+                          _pageController.animateToPage(
+                            _onboardingItems.length - 1,
+                            duration: const Duration(milliseconds: 600),
+                            curve: Curves.easeInOut,
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Text(
+                                "Skip",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              SizedBox(width: 5),
+                              Icon(
+                                Icons.skip_next_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   )
@@ -128,45 +172,125 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       dotWidth: 10,
                       spacing: 16,
                     ),
+                    onDotClicked: (index) {
+                      // Allow direct navigation by tapping dots
+                      _pageController.animateToPage(
+                        index,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeInOut,
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 30),
 
-                // Button section
-                Container(
-                  width: double.infinity,
-                  height: 70,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (_isLastPage) {
-                        // Navigate to the weather page
-                        Navigator.pushReplacementNamed(context, '/');
-                      } else {
-                        // Go to next page
-                        _pageController.nextPage(
-                          duration: const Duration(milliseconds: 600),
-                          curve: Curves.easeInOut,
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                // Conditional button layout: full-width on first page, split on others
+                _currentPage == 0
+                    // Full-width "Continue" button for first page
+                    ? Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            _pageController.nextPage(
+                              duration: const Duration(milliseconds: 600),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            elevation: 8,
+                            padding: const EdgeInsets.symmetric(vertical: 15),
+                          ),
+                          child: const Text(
+                            "Continue",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      )
+                    // Row with Back and Continue/Get Started buttons for other pages
+                    : Row(
+                        children: [
+                          // Back button
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  _pageController.previousPage(
+                                    duration: const Duration(milliseconds: 600),
+                                    curve: Curves.easeInOut,
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  elevation: 8,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 15),
+                                ),
+                                child: const Text(
+                                  "Back",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // Continue or Get Started button
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  if (_isLastPage) {
+                                    // Navigate to the weather page
+                                    Navigator.pushReplacementNamed(
+                                        context, '/');
+                                  } else {
+                                    // Go to next page
+                                    _pageController.nextPage(
+                                      duration:
+                                          const Duration(milliseconds: 600),
+                                      curve: Curves.easeInOut,
+                                    );
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  elevation: 8,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 15),
+                                ),
+                                child: Text(
+                                  _isLastPage ? "Get Started" : "Continue",
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      elevation: 8,
-                    ),
-                    child: Text(
-                      _isLastPage ? "Get Started" : "Continue",
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
