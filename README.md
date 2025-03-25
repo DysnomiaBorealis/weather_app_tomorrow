@@ -31,9 +31,8 @@ https://github.com/user-attachments/assets/4d7d866f-ef79-48bc-be29-baa3acae0203
   - Reactive programming with streams
   - Easy testing with predictable state transitions
 - Lottie for advanced animations
-  - High-quality vector animations
+  - Vector animations
   - Support for complex interactive animations
-  - JSON-based animation files from Adobe After Effects
 - Test-Driven Development (TDD)
   - Unit tests for business logic
   - Widget tests for UI components
@@ -99,4 +98,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - Weather data provided by [Tomorrow.io](https://www.tomorrow.io/)
 - Icons designed by https://www.tomorrow.io/
-- Special thanks to all contributors and testers
