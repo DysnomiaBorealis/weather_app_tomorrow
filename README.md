@@ -1,6 +1,6 @@
 # Weather App
 
-A beautiful and functional weather application built with Flutter that provides current and forecast weather information for locations worldwide using the Tomorrow.io API.
+A functional weather application built with Flutter that provides current and forecast weather information for locations worldwide using the Tomorrow.io API.
 
 ## Features
 
@@ -9,6 +9,7 @@ A beautiful and functional weather application built with Flutter that provides 
 - Weather condition visualizations with corresponding icons
 - Location-based weather services
 - Ability to search for weather in different cities
+- Push notifications for weather alerts
 - Decent UI with smooth transitions and animations
   
 ## Screenshots
@@ -26,10 +27,27 @@ https://github.com/user-attachments/assets/4d7d866f-ef79-48bc-be29-baa3acae0203
 - Dart
 - Tomorrow.io API for weather data
 - BLoC pattern for state management
-- Optional: Geolocator for device location services (omit if using only API-provided locations)
+  - Separation of business logic from UI
+  - Reactive programming with streams
+  - Easy testing with predictable state transitions
+- Lottie for advanced animations
+  - High-quality vector animations
+  - Support for complex interactive animations
+  - JSON-based animation files from Adobe After Effects
+- Test-Driven Development (TDD)
+  - Unit tests for business logic
+  - Widget tests for UI components
+  - Integration tests for full feature validation
+- Dependency Injection (DI)
+  - Modular code structure
+  - Improved testability
+  - Loose coupling between components
+- Push Notifications
+  - Weather alerts and warnings
+  - Daily forecast reminders
+  - Customizable notification preferences
 - HTTP package for API requests
 - Shared preferences for local storage
-- Lottie and Flutter built-in for animations
 
 ## Getting Started
 
@@ -65,7 +83,7 @@ https://github.com/user-attachments/assets/4d7d866f-ef79-48bc-be29-baa3acae0203
 
 ## Usage
 
-- Upon launching the app, it will request permission to access your location
+- Upon launching the app, it will request permission to access the notification 
 - The app will display the current weather for the locations that have been chosen
 - Use the city button to check weather information for other cities
 
