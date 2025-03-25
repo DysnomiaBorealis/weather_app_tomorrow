@@ -6,6 +6,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:weather_app_tommorow/common/enum.dart';
 import 'package:weather_app_tommorow/common/extension.dart';
 import 'package:weather_app_tommorow/features/weather/presentation/bloc/current_weather/current_weather_bloc.dart';
@@ -28,6 +30,15 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
   late Animation<double> _sunRotationAnimation;
   late Animation<double> _sunScaleAnimation;
   late Animation<double> _rainAnimation;
+
+  // Add animation controllers for notification button
+  late AnimationController _notificationButtonController;
+  late Animation<double> _notificationScaleAnimation;
+
+  // Notification settings
+  bool _rainAlerts = false;
+  bool _stormAlerts = false;
+  bool _temperatureAlerts = false;
 
   // Add animation controller for Lottie movement
   late AnimationController _lottiePositionController;
@@ -57,6 +68,18 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
   late Animation<double> _cityScaleAnimation;
   late Animation<double> _hourlyScaleAnimation;
 
+  // Add notification plugin instance
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  // Add timer for periodic weather checks
+  Timer? _weatherCheckTimer;
+
+  // Add keys for SharedPreferences
+  static const String _keyRainAlerts = 'rain_alerts';
+  static const String _keyStormAlerts = 'storm_alerts';
+  static const String _keyTempAlerts = 'temperature_alerts';
+
   refresh() {
     context.read<CurrentWeatherBloc>().add(OnGetCurrentWeather());
   }
@@ -67,6 +90,20 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
       vsync: this,
       duration: const Duration(seconds: 10),
     )..repeat(reverse: true);
+
+    // Initialize notification button animation
+    _notificationButtonController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+
+    _notificationScaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(
+      parent: _notificationButtonController,
+      curve: Curves.easeInOut,
+    ));
 
     // Lottie movement controller - longer duration for smoother traversal
     _lottiePositionController = AnimationController(
@@ -252,6 +289,12 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
       curve: Curves.easeInOut,
     ));
 
+    // Initialize notifications
+    _initializeNotifications();
+
+    // Load saved notification preferences
+    _loadNotificationSettings();
+
     refresh();
     super.initState();
   }
@@ -262,9 +305,11 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
     _refreshRotationController.dispose();
     _cityButtonController.dispose();
     _hourlyButtonController.dispose();
+    _notificationButtonController.dispose(); // Add this line
     _lottiePositionController.dispose(); // Dispose the new controller
     _rainTimer?.cancel();
     _thunderTimer?.cancel();
+    _weatherCheckTimer?.cancel();
     super.dispose();
   }
 
@@ -688,75 +733,104 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
   }
 
   Widget headerAction() {
-    return Row(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        buttonAction(
-          onTap: () {
-            _cityButtonController
-                .forward()
-                .then((_) => _cityButtonController.reverse());
-            Navigator.pushNamed(
-              context,
-              AppRoute.pickPlace.name,
-            ).then((backResponse) {
-              if (backResponse == null) return;
-              if (backResponse == 'refresh') refresh();
-            });
-          },
-          title: 'City',
-          icon: Icons.location_on,
-          animationController: _cityButtonController,
-          scaleAnimation: _cityScaleAnimation,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF64B5F6), Color(0xFF1976D2)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        DView.width(8),
-        buttonAction(
-          onTap: () {
-            // Add refresh animation effect
-            _refreshRotationController.reset();
-            _refreshRotationController.forward();
-            refresh();
-          },
-          title: 'Refresh',
-          icon: Icons.refresh,
-          customIconWidget: RotationTransition(
-            turns: _refreshRotationAnimation,
-            child: const Icon(
-              Icons.refresh,
-              size: 12,
-              color: Colors.white,
+        // First row of buttons
+        Row(
+          children: [
+            buttonAction(
+              onTap: () {
+                _cityButtonController
+                    .forward()
+                    .then((_) => _cityButtonController.reverse());
+                Navigator.pushNamed(
+                  context,
+                  AppRoute.pickPlace.name,
+                ).then((backResponse) {
+                  if (backResponse == null) return;
+                  if (backResponse == 'refresh') refresh();
+                });
+              },
+              title: 'City',
+              icon: Icons.location_on,
+              animationController: _cityButtonController,
+              scaleAnimation: _cityScaleAnimation,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF64B5F6), Color(0xFF1976D2)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
-          ),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+            DView.width(8),
+            buttonAction(
+              onTap: () {
+                // Add refresh animation effect
+                _refreshRotationController.reset();
+                _refreshRotationController.forward();
+                refresh();
+              },
+              title: 'Refresh',
+              icon: Icons.refresh,
+              customIconWidget: RotationTransition(
+                turns: _refreshRotationAnimation,
+                child: const Icon(
+                  Icons.refresh,
+                  size: 12,
+                  color: Colors.white,
+                ),
+              ),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ],
         ),
-        DView.width(8),
-        buttonAction(
-          onTap: () {
-            _hourlyButtonController
-                .forward()
-                .then((_) => _hourlyButtonController.reverse());
-            Navigator.pushNamed(context, AppRoute.hourlyForecast.name);
-          },
-          title: 'Hourly',
-          icon: Icons.access_time,
-          animationController: _hourlyButtonController,
-          scaleAnimation: _hourlyScaleAnimation,
-          gradient: const LinearGradient(
-            colors: [
-              Color(0xFF9C27B0),
-              Color(0xFF6A1B9A)
-            ], // Purple gradient instead of orange
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+        DView.height(8), // Add spacing between rows
+        // Second row of buttons
+        Row(
+          children: [
+            buttonAction(
+              onTap: () {
+                _hourlyButtonController
+                    .forward()
+                    .then((_) => _hourlyButtonController.reverse());
+                Navigator.pushNamed(context, AppRoute.hourlyForecast.name);
+              },
+              title: 'Hourly',
+              icon: Icons.access_time,
+              animationController: _hourlyButtonController,
+              scaleAnimation: _hourlyScaleAnimation,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF9C27B0), Color(0xFF6A1B9A)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            DView.width(8),
+            buttonAction(
+              onTap: () {
+                _notificationButtonController
+                    .forward()
+                    .then((_) => _notificationButtonController.reverse());
+                _showNotificationDialog();
+              },
+              title: 'Alerts',
+              icon: Icons.notifications,
+              animationController: _notificationButtonController,
+              scaleAnimation: _notificationScaleAnimation,
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFFFFA726),
+                  Color(0xFFF57C00)
+                ], // Orange gradient
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -1041,6 +1115,336 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
         ],
       ),
     );
+  }
+
+  // Add these new notification-related methods
+  void _showNotificationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: const Color(0xFF4A9EF7).withOpacity(0.9),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text(
+            'Weather Alerts',
+            style: TextStyle(
+              fontSize: 22,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              shadows: [
+                Shadow(
+                  blurRadius: 3,
+                  color: Colors.black26,
+                  offset: Offset(1, 1),
+                ),
+              ],
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildNotificationSwitch(
+                setState,
+                title: 'Rain Alerts',
+                subtitle: 'Get notified when rain is expected',
+                value: _rainAlerts,
+                onChanged: (value) {
+                  setState(() => _rainAlerts = value);
+                },
+                icon: Icons.water_drop,
+              ),
+              const Divider(color: Colors.white30, height: 1),
+              _buildNotificationSwitch(
+                setState,
+                title: 'Storm Alerts',
+                subtitle: 'Get notified about incoming storms',
+                value: _stormAlerts,
+                onChanged: (value) {
+                  setState(() => _stormAlerts = value);
+                },
+                icon: Icons.thunderstorm,
+              ),
+              const Divider(color: Colors.white30, height: 1),
+              _buildNotificationSwitch(
+                setState,
+                title: 'Temperature Alerts',
+                subtitle: 'Alerts for significant temperature changes',
+                value: _temperatureAlerts,
+                onChanged: (value) {
+                  setState(() => _temperatureAlerts = value);
+                },
+                icon: Icons.thermostat,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white70,
+              ),
+              child: const Text('CANCEL'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF4A9EF7),
+                elevation: 2,
+              ),
+              onPressed: () {
+                _saveNotificationSettings();
+                Navigator.pop(context);
+
+                // Show confirmation
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                        'Weather alerts ${_hasAnyAlerts() ? 'enabled' : 'disabled'}'),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor:
+                        _hasAnyAlerts() ? Colors.green : Colors.grey,
+                  ),
+                );
+              },
+              child: const Text('SAVE'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationSwitch(
+    StateSetter setState, {
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    required IconData icon,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Container(
+            height: 40,
+            width: 40,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: Colors.white),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: Colors.white,
+            activeTrackColor: Colors.green.shade300,
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _hasAnyAlerts() {
+    return _rainAlerts || _stormAlerts || _temperatureAlerts;
+  }
+
+  // Initialize the notification system
+  Future<void> _initializeNotifications() async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    const DarwinInitializationSettings initializationSettingsIOS =
+        DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+
+    const InitializationSettings initializationSettings =
+        InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
+
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        // Handle notification tap
+        print('Notification tapped: ${response.payload}');
+      },
+    );
+
+    // Create notification channels for Android
+    if (Theme.of(context).platform == TargetPlatform.android) {
+      await flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(const AndroidNotificationChannel(
+            'weather_alerts_channel',
+            'Weather Alerts',
+            description: 'Notifications for important weather conditions',
+            importance: Importance.high,
+          ));
+
+      // Request notification permissions for Android 13+ (API level 33+)
+      await flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.requestNotificationsPermission();
+
+      // Request permission for exact alarms if needed
+      await flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.requestExactAlarmsPermission();
+    }
+  }
+
+  // Load saved notification settings
+  Future<void> _loadNotificationSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _rainAlerts = prefs.getBool(_keyRainAlerts) ?? false;
+      _stormAlerts = prefs.getBool(_keyStormAlerts) ?? false;
+      _temperatureAlerts = prefs.getBool(_keyTempAlerts) ?? false;
+    });
+  }
+
+  // Revised implementation for saving notification settings
+  Future<void> _saveNotificationSettings() async {
+    // Save preferences to SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyRainAlerts, _rainAlerts);
+    await prefs.setBool(_keyStormAlerts, _stormAlerts);
+    await prefs.setBool(_keyTempAlerts, _temperatureAlerts);
+
+    // Log configuration
+    print('Weather alerts configuration saved:');
+    print('Rain alerts: $_rainAlerts');
+    print('Storm alerts: $_stormAlerts');
+    print('Temperature alerts: $_temperatureAlerts');
+
+    // Cancel existing timer if it exists
+    _weatherCheckTimer?.cancel();
+
+    // If any alerts are enabled, start periodic weather checks
+    if (_hasAnyAlerts()) {
+      // Check weather conditions every 30 minutes (adjust as needed)
+      _weatherCheckTimer = Timer.periodic(
+          const Duration(minutes: 30), (_) => _checkWeatherConditions());
+
+      // Do an immediate check
+      _checkWeatherConditions();
+    }
+  }
+
+  // Check weather conditions and send notifications if needed
+  Future<void> _checkWeatherConditions() async {
+    try {
+      // Get current weather state from the bloc
+      final state = context.read<CurrentWeatherBloc>().state;
+
+      if (state is CurrentWeatherLoaded) {
+        final weather = state.data;
+        final weatherDescription = weather.description.toLowerCase();
+        final temperature = weather.temperature;
+
+        // Check for rain conditions
+        if (_rainAlerts &&
+            (weatherDescription.contains('rain') ||
+                weatherDescription.contains('drizzle'))) {
+          _showWeatherNotification('Rain Alert',
+              'Rain expected in ${weather.cityName ?? "your area"}.', 'rain');
+        }
+
+        // Check for storm conditions
+        if (_stormAlerts &&
+            (weatherDescription.contains('storm') ||
+                weatherDescription.contains('thunder'))) {
+          _showWeatherNotification('Storm Alert',
+              'Storm expected in ${weather.cityName ?? "your area"}.', 'storm');
+        }
+
+        // Check for extreme temperature (adjust thresholds as needed)
+        if (_temperatureAlerts) {
+          if (temperature > 30) {
+            _showWeatherNotification(
+                'High Temperature Alert',
+                'Temperature is ${temperature.toStringAsFixed(1)}°C in ${weather.cityName ?? "your area"}.',
+                'high_temp');
+          } else if (temperature < 0) {
+            _showWeatherNotification(
+                'Low Temperature Alert',
+                'Temperature is ${temperature.toStringAsFixed(1)}°C in ${weather.cityName ?? "your area"}.',
+                'low_temp');
+          }
+        }
+      }
+    } catch (e) {
+      print('Error checking weather conditions: $e');
+    }
+  }
+
+  // Show a notification
+  Future<void> _showWeatherNotification(
+      String title, String body, String payload) async {
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+      'weather_alerts_channel',
+      'Weather Alerts',
+      channelDescription: 'Notifications for important weather conditions',
+      importance: Importance.high,
+      priority: Priority.high,
+      ticker: 'Weather Alert',
+      icon: '@mipmap/ic_launcher',
+    );
+
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const NotificationDetails platformDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await flutterLocalNotificationsPlugin.show(
+      DateTime.now().millisecond, // Random ID based on current time
+      title,
+      body,
+      platformDetails,
+      payload: payload,
+    );
+
+    print('Notification sent: $title - $body');
   }
 
   @override

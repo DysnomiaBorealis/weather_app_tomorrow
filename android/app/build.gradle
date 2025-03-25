@@ -7,10 +7,12 @@ plugins {
 
 android {
     namespace = "com.example.weather_app_tommorow"
-    compileSdk = 34
+    // Update to the required compileSdk version
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        coreLibraryDesugaringEnabled true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -25,7 +27,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk 21
-        targetSdk = 34
+        targetSdk = 35  // Update target SDK to match compileSdk
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -37,6 +39,14 @@ android {
             signingConfig = signingConfigs.debug
         }
     }
+}
+
+dependencies {
+    // Add desugaring dependency as required for notifications
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+    
+    // Add WindowManager library to fix crashes on Android 12L+
+    implementation 'androidx.window:window:1.2.0'
 }
 
 flutter {

@@ -4,11 +4,10 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        // Downgrade AGP to avoid the namespace enforcement issue
-        classpath 'com.android.tools.build:gradle:7.4.2'
+        // Update to required Android Gradle Plugin version for notifications
+        classpath 'com.android.tools.build:gradle:8.6.0'
     }
 }
-
 
 allprojects {
     repositories {
@@ -18,11 +17,39 @@ allprojects {
 }
 
 rootProject.buildDir = "../build"
+
+// First set up build directories
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
+
+// Handle plugin-specific configurations
+gradle.projectsEvaluated {
+    subprojects { project ->
+        if (project.name == 'flutter_local_notifications') {
+            project.configurations.all {
+                resolutionStrategy {
+                    force 'androidx.core:core:1.10.0'
+                    force 'androidx.core:core-ktx:1.10.0'
+                }
+            }
+            
+            // Apply compileOptions if possible
+            if (project.hasProperty('android')) {
+                project.android.compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                }
+            }
+        }
+    }
+}
+
+// Ensure app is evaluated
 subprojects {
-    project.evaluationDependsOn(":app")
+    if (project.name != 'flutter_local_notifications') {
+        project.evaluationDependsOn(":app")
+    }
 }
 
 tasks.register("clean", Delete) {
