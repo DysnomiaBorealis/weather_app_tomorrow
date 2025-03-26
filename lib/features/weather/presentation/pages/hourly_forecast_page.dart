@@ -32,6 +32,30 @@ class _HourlyForecastPageState extends State<HourlyForecastPage>
     context.read<HourlyForecastBloc>().add(OnGetHourlyForecast());
   }
 
+  List<WeatherEntity> _ensureSortedData(List<WeatherEntity> inputList) {
+    // Clone the list to avoid mutation issues
+    final List<WeatherEntity> sortedList = List<WeatherEntity>.from(inputList);
+
+    // Debug log before sorting
+    print('BEFORE SORTING - Hourly forecast timestamps:');
+    for (var i = 0; i < sortedList.length; i++) {
+      print(
+          '${i}: ${sortedList[i].dateTime.toIso8601String()} - ${DateFormat('HH:mm').format(sortedList[i].dateTime)}');
+    }
+
+    // Sort the list using our compareByDateTime method
+    sortedList.sort((a, b) => a.compareByDateTime(b));
+
+    // Debug log after sorting
+    print('AFTER SORTING - Hourly forecast timestamps:');
+    for (var i = 0; i < sortedList.length; i++) {
+      print(
+          '${i}: ${sortedList[i].dateTime.toIso8601String()} - ${DateFormat('HH:mm').format(sortedList[i].dateTime)}');
+    }
+
+    return sortedList;
+  }
+
   @override
   void initState() {
     _animationController = AnimationController(
@@ -265,7 +289,9 @@ class _HourlyForecastPageState extends State<HourlyForecastPage>
                 );
               }
               if (state is HourlyForecastLoaded) {
-                final list = state.data;
+                // Get sorted data
+                final list = _ensureSortedData(state.data);
+
                 return Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -313,7 +339,15 @@ class _HourlyForecastPageState extends State<HourlyForecastPage>
                         ),
                       );
                     },
+                    order: GroupedListOrder
+                        .ASC, // Ensure items are displayed in ascending order
+                    itemComparator: (item1, item2) => item1.compareByDateTime(
+                        item2), // Add this explicit comparator
                     itemBuilder: (context, weather) {
+                      // Debug print each item as it's rendered
+                      print(
+                          'Rendering forecast for: ${DateFormat('yyyy-MM-dd HH:mm').format(weather.dateTime)}');
+
                       return Card(
                         margin: const EdgeInsets.symmetric(
                           horizontal: 16,

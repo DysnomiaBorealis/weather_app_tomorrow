@@ -12,4 +12,10 @@ class URLs {
       'https://api.tomorrow.io/v4/weather/forecast?location=${Uri.encodeComponent(cityName)}&apikey=$apiKey',
     );
   }
+
+  static Uri getRecentHistoryUrl(String cityName, String apiKey) {
+  return Uri.parse(
+    '${base}history/recent?location=${Uri.encodeComponent(cityName)}&apikey=$apiKey',
+  );
+}
 }

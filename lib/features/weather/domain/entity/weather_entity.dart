@@ -37,11 +37,15 @@ class WeatherEntity extends Equatable {
 
     // Retrieve weather description from the iconMappings.
     final iconMappings = json['iconMappings'] as Map<String, dynamic>;
-    final weatherCodeFullDay = iconMappings['weatherCodeFullDay'] as Map<String, dynamic>;
-    final String weatherDescription = weatherCodeFullDay[weatherCode.toString()] as String;
+    final weatherCodeFullDay =
+        iconMappings['weatherCodeFullDay'] as Map<String, dynamic>;
+    final String weatherDescription =
+        weatherCodeFullDay[weatherCode.toString()] as String;
 
     // Use the AppConstant mapping to get the adjacent image/icon.
-    final String iconAsset = AppConstant.weatherIconMapper[weatherDescription] ?? 'assets/icons/default.png';
+    final String iconAsset =
+        AppConstant.weatherIconMapper[weatherDescription] ??
+            'assets/icons/default.png';
 
     return WeatherEntity(
       id: weatherCode,
@@ -72,5 +76,13 @@ class WeatherEntity extends Equatable {
       dateTime,
       cityName,
     ];
+  }
+
+  // Add a comparison method for chronological sorting
+  int compareByDateTime(WeatherEntity other) {
+    // Debug print to track comparison
+    print(
+        'Comparing: ${dateTime.toIso8601String()} with ${other.dateTime.toIso8601String()}');
+    return dateTime.compareTo(other.dateTime);
   }
 }

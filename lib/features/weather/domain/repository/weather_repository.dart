@@ -7,5 +7,6 @@ abstract class WeatherRepository {
     Future<Either<Failure, List<WeatherEntity>>> getHourlyForecast(
     String cityName,
   );
+  Future<Either<Failure, List<WeatherEntity>>> getWeatherHistory(String cityName);
 }
 

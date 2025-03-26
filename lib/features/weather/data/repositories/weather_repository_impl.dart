@@ -33,7 +33,8 @@ class WeatherRepositoryImpl implements WeatherRepository {
   }
 
   @override
-  Future<Either<Failure, List<WeatherEntity>>> getHourlyForecast(cityName) async {
+  Future<Either<Failure, List<WeatherEntity>>> getHourlyForecast(
+      cityName) async {
     try {
       final List<WeatherModel> result =
           await remoteDataSource.getHourlyForecast(cityName);
@@ -47,6 +48,25 @@ class WeatherRepositoryImpl implements WeatherRepository {
     } catch (e) {
       debugPrint('Something Failure in forecast: $e');
       return const Left(SomethingFailure('Something wrong has occcured'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<WeatherEntity>>> getWeatherHistory(
+      String cityName) async {
+    try {
+      final List<WeatherModel> result =
+          await remoteDataSource.getWeatherHistory(cityName);
+      return Right(result.map((model) => model.toEntity).toList());
+    } on NotFoundException {
+      return const Left(NotFoundFailure('Not found'));
+    } on ServerException {
+      return const Left(ServerFailure('Server error'));
+    } on SocketException {
+      return const Left(ConnectionFailure('Failed connect to the network'));
+    } catch (e) {
+      debugPrint('Something Failure in history: $e');
+      return const Left(SomethingFailure('Something wrong has occurred'));
     }
   }
 }

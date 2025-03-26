@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:convert';
 import 'package:d_view/d_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -79,6 +80,18 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
   static const String _keyRainAlerts = 'rain_alerts';
   static const String _keyStormAlerts = 'storm_alerts';
   static const String _keyTempAlerts = 'temperature_alerts';
+
+  // Add animation controllers for new buttons
+  late AnimationController _historyButtonController;
+  late AnimationController _savedLocationsButtonController;
+  late Animation<double> _historyScaleAnimation;
+  late Animation<double> _savedLocationsScaleAnimation;
+
+  // Key for SharedPreferences saved locations
+  static const String _keySavedLocations = 'saved_locations';
+
+  // List to store saved locations
+  List<Map<String, dynamic>> _savedLocations = [];
 
   refresh() {
     context.read<CurrentWeatherBloc>().add(OnGetCurrentWeather());
@@ -295,6 +308,37 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
     // Load saved notification preferences
     _loadNotificationSettings();
 
+    // Initialize history button animation
+    _historyButtonController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+
+    _historyScaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(
+      parent: _historyButtonController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Initialize saved locations button animation
+    _savedLocationsButtonController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+
+    _savedLocationsScaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(
+      parent: _savedLocationsButtonController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Load saved locations
+    _loadSavedLocations();
+
     refresh();
     super.initState();
   }
@@ -310,6 +354,8 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
     _rainTimer?.cancel();
     _thunderTimer?.cancel();
     _weatherCheckTimer?.cancel();
+    _historyButtonController.dispose();
+    _savedLocationsButtonController.dispose();
     super.dispose();
   }
 
@@ -826,6 +872,37 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
                   Color(0xFFFFA726),
                   Color(0xFFF57C00)
                 ], // Orange gradient
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ],
+        ),
+        DView.height(8),
+        // New third row of buttons
+        Row(
+          children: [
+            buttonAction(
+              onTap: _showHistoryPage,
+              title: 'History',
+              icon: Icons.history,
+              animationController: _historyButtonController,
+              scaleAnimation: _historyScaleAnimation,
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFF7043), Color(0xFFE64A19)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            DView.width(8),
+            buttonAction(
+              onTap: _showSavedLocationsBottomSheet,
+              title: 'Saved',
+              icon: Icons.star,
+              animationController: _savedLocationsButtonController,
+              scaleAnimation: _savedLocationsScaleAnimation,
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFD54F), Color(0xFFFFC107)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -1445,6 +1522,375 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
     );
 
     print('Notification sent: $title - $body');
+  }
+
+  // Load saved locations from SharedPreferences
+  Future<void> _loadSavedLocations() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedLocationsJson = prefs.getString(_keySavedLocations);
+
+    if (savedLocationsJson != null) {
+      try {
+        final List<dynamic> decoded = jsonDecode(savedLocationsJson);
+        setState(() {
+          _savedLocations = decoded.cast<Map<String, dynamic>>();
+        });
+        print('Loaded ${_savedLocations.length} saved locations');
+      } catch (e) {
+        print('Error loading saved locations: $e');
+        _savedLocations = [];
+      }
+    }
+  }
+
+  // Save locations to SharedPreferences
+  Future<void> _saveSavedLocations() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedLocationsJson = jsonEncode(_savedLocations);
+    await prefs.setString(_keySavedLocations, savedLocationsJson);
+    print('Saved ${_savedLocations.length} locations to preferences');
+  }
+
+  // Add current location to saved locations
+  Future<void> _addCurrentLocationToSaved() async {
+    final state = context.read<CurrentWeatherBloc>().state;
+    if (state is CurrentWeatherLoaded) {
+      final weather = state.data;
+
+      // Check if location already saved
+      final locationName = weather.cityName ?? 'Unknown';
+      final existingIndex = _savedLocations
+          .indexWhere((location) => location['name'] == locationName);
+
+      if (existingIndex >= 0) {
+        // Update existing location
+        setState(() {
+          _savedLocations[existingIndex] = {
+            'name': locationName,
+            'temperature': weather.temperature,
+            'description': weather.description,
+            'icon': weather.icon,
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+          };
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Updated saved location: $locationName'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        // Add new location
+        setState(() {
+          _savedLocations.add({
+            'name': locationName,
+            'temperature': weather.temperature,
+            'description': weather.description,
+            'icon': weather.icon,
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+          });
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Added to saved locations: $locationName'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+
+      // Save to SharedPreferences
+      await _saveSavedLocations();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot save location at this time'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Remove location from saved locations
+  Future<void> _removeSavedLocation(int index) async {
+    final locationName = _savedLocations[index]['name'];
+
+    setState(() {
+      _savedLocations.removeAt(index);
+    });
+
+    await _saveSavedLocations();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Removed from saved locations: $locationName'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // Set saved location as current
+  void _setLocationAsCurrent(String locationName) {
+    Navigator.pushNamed(
+      context,
+      AppRoute.pickPlace.name,
+      arguments: {'searchQuery': locationName},
+    ).then((backResponse) {
+      if (backResponse == 'refresh') refresh();
+    });
+
+    Navigator.pop(context); // Close bottom sheet
+  }
+
+  // Fix the capitalize error in saved locations bottom sheet
+  void _showSavedLocationsBottomSheet() {
+    _savedLocationsButtonController
+        .forward()
+        .then((_) => _savedLocationsButtonController.reverse());
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (_, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 10,
+                spreadRadius: 5,
+              )
+            ],
+          ),
+          child: Column(
+            children: [
+              // Handle and title
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4A9EF7),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(20)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    )
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(2.5),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Saved Locations',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: _addCurrentLocationToSaved,
+                          icon: const Icon(Icons.add_location_alt, size: 16),
+                          label: const Text('Add Current'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: const Color(0xFF4A9EF7),
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            textStyle: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // List of saved locations
+              Expanded(
+                child: _savedLocations.isEmpty
+                    ? const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.location_off,
+                              size: 64,
+                              color: Colors.grey,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'No saved locations yet',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Add your favorite locations for quick access',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        controller: scrollController,
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _savedLocations.length,
+                        itemBuilder: (context, index) {
+                          final location = _savedLocations[index];
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  // Location icon or weather icon
+                                  CircleAvatar(
+                                    backgroundColor: const Color(0xFF4A9EF7)
+                                        .withOpacity(0.2),
+                                    child: location['icon'] != null
+                                        ? Image.asset(
+                                            location['icon'],
+                                            width: 30,
+                                            height: 30,
+                                          )
+                                        : const Icon(Icons.place),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  // Location details
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          location['name'] ??
+                                              'Unknown Location',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        if (location['description'] != null)
+                                          Text(
+                                            // Fix capitalize error with null safety and direct capitalization
+                                            location['description'] != null
+                                                ? _capitalizeString(
+                                                    location['description'])
+                                                : '',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Temperature
+                                  if (location['temperature'] != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 16),
+                                      child: Text(
+                                        '${location['temperature'].round()}°C',
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF4A9EF7),
+                                        ),
+                                      ),
+                                    ),
+                                  // Action buttons
+                                  Column(
+                                    children: [
+                                      IconButton(
+                                        onPressed: () => _setLocationAsCurrent(
+                                            location['name']),
+                                        icon: const Icon(
+                                          Icons.navigation,
+                                          color: Color(0xFF4A9EF7),
+                                        ),
+                                        tooltip: 'Set as current',
+                                        constraints: const BoxConstraints(),
+                                        padding: const EdgeInsets.all(8),
+                                      ),
+                                      IconButton(
+                                        onPressed: () =>
+                                            _removeSavedLocation(index),
+                                        icon: const Icon(
+                                          Icons.delete_outline,
+                                          color: Colors.redAccent,
+                                        ),
+                                        tooltip: 'Remove',
+                                        constraints: const BoxConstraints(),
+                                        padding: const EdgeInsets.all(8),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Add helper method to capitalize strings safely
+  String _capitalizeString(String? text) {
+    if (text == null || text.isEmpty) return '';
+    return text[0].toUpperCase() + text.substring(1).toLowerCase();
+  }
+
+  // Show history page - placeholder implementation
+  void _showHistoryPage() {
+    _historyButtonController
+        .forward()
+        .then((_) => _historyButtonController.reverse());
+
+    // Navigate to the history page using the correct route name
+    Navigator.pushNamed(context, AppRoute.weatherDetail.name);
   }
 
   @override
