@@ -1197,7 +1197,7 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
             Expanded(
               child: _buildMetricTile(
                 'Feels Like',
-                '${(weather.temperature - 2).round()}°',  // Shorter text
+                '${(weather.temperature - 2).round()}°', // Shorter text
                 Icons.thermostat,
               ),
             ),
@@ -1205,7 +1205,7 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
             Expanded(
               child: _buildMetricTile(
                 'UV Index',
-                'Mod',  // Shorter text
+                'Mod', // Shorter text
                 Icons.sunny,
               ),
             ),
@@ -1226,7 +1226,8 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
   // Helper method for metric tiles with transparent background - Modified to prevent overflow
   Widget _buildMetricTile(String title, String value, IconData icon) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6), // Reduced horizontal padding
+      padding: const EdgeInsets.symmetric(
+          vertical: 10, horizontal: 6), // Reduced horizontal padding
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(15),
@@ -1236,10 +1237,13 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
         children: [
           Row(
             children: [
-              Icon(icon, color: Colors.white70, size: 14), // Reduced from 16 to 14
+              Icon(icon,
+                  color: Colors.white70, size: 14), // Reduced from 16 to 14
               const SizedBox(width: 2), // Reduced from 4 to 2
-              Expanded(  // Added Expanded to prevent overflow
-                child: FittedBox(  // Added FittedBox to scale text if needed
+              Expanded(
+                // Added Expanded to prevent overflow
+                child: FittedBox(
+                  // Added FittedBox to scale text if needed
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -1255,7 +1259,8 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
             ],
           ),
           const SizedBox(height: 4),
-          FittedBox(  // Added FittedBox for value text
+          FittedBox(
+            // Added FittedBox for value text
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Text(
@@ -1279,31 +1284,31 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
       {
         'time': '2 PM',
         'temp': 25,
-        'icon': 'icons/01d.png', 
+        'icon': 'icons/01d.png',
         'condition': 'Sunny'
       },
       {
         'time': '6 PM',
         'temp': 23,
-        'icon': 'icons/02d.png', 
+        'icon': 'icons/02d.png',
         'condition': 'Partly Cloudy'
       },
       {
         'time': '10 PM',
         'temp': 19,
-        'icon': 'icons/01n.png', 
+        'icon': 'icons/01n.png',
         'condition': 'Clear'
       },
       {
         'time': '2 AM',
         'temp': 17,
-        'icon': 'icons/Partly Cloud.png', 
+        'icon': 'icons/Partly Cloud.png',
         'condition': 'Partly Cloudy'
       },
       {
         'time': '6 AM',
         'temp': 16,
-        'icon': 'icons/10d.png', 
+        'icon': 'icons/10d.png',
         'condition': 'Light Rain'
       },
     ];
@@ -1356,7 +1361,7 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
     Widget weatherIcon;
     try {
       weatherIcon = Image.asset(
-        'assets/$iconPath', 
+        'assets/$iconPath',
         width: 30,
         height: 30,
         errorBuilder: (context, error, stackTrace) {
@@ -1516,18 +1521,21 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
           bottom: true, // Ensure safe area at bottom
           child: ListView(
             padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).padding.bottom + 16, // Add extra bottom padding
+              bottom: MediaQuery.of(context).padding.bottom +
+                  16, // Add extra bottom padding
             ),
             children: [
               // Replace DrawerHeader with custom container for more flexibility
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.1),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min, // Allow container to size to content
+                  mainAxisSize:
+                      MainAxisSize.min, // Allow container to size to content
                   children: [
                     const Text(
                       'Weather App',
@@ -1560,7 +1568,8 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
                                   color: Colors.white70,
                                   fontSize: 13, // Smaller font size
                                 ),
-                                overflow: TextOverflow.ellipsis, // Handle text overflow
+                                overflow: TextOverflow
+                                    .ellipsis, // Handle text overflow
                                 maxLines: 1, // Limit to one line
                               ),
                             ),
@@ -1644,7 +1653,8 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
   }) {
     return ListTile(
       dense: true, // Make the tile more compact
-      visualDensity: const VisualDensity(horizontal: -1, vertical: -1), // Reduce the visual density
+      visualDensity: const VisualDensity(
+          horizontal: -1, vertical: -1), // Reduce the visual density
       leading: Icon(icon, color: isHighlighted ? Colors.amber : Colors.white),
       title: Text(
         title,
