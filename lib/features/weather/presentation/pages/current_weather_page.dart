@@ -1157,12 +1157,12 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
     );
   }
 
-  // New method for weather metrics with transparent backgrounds
+  // New method for weather metrics with transparent backgrounds - Modified for responsiveness
   Widget _buildWeatherMetrics(dynamic weather) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // First row of metrics
+        // First row of metrics - Using FittedBox to prevent overflow
         Row(
           children: [
             Expanded(
@@ -1172,7 +1172,7 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
                 Icons.water_drop_outlined,
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8), // Reduced from 10 to 8
             Expanded(
               child: _buildMetricTile(
                 'Wind',
@@ -1180,39 +1180,36 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
                 Icons.air,
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8), // Reduced from 10 to 8
             Expanded(
               child: _buildMetricTile(
                 'Pressure',
-                '${NumberFormat.currency(
-                  decimalDigits: 0,
-                  symbol: '',
-                ).format(weather.pressureSurfaceLevel)}hPa',
+                '${NumberFormat.compact().format(weather.pressureSurfaceLevel)}hPa', // Using compact format
                 Icons.compress,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8), // Reduced from 10 to 8
         // Second row with "Feels Like" and other metrics
         Row(
           children: [
             Expanded(
               child: _buildMetricTile(
                 'Feels Like',
-                '${(weather.temperature - 2).round()}°C', // Approximation for demo
+                '${(weather.temperature - 2).round()}°',  // Shorter text
                 Icons.thermostat,
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8), // Reduced from 10 to 8
             Expanded(
               child: _buildMetricTile(
                 'UV Index',
-                'Moderate',
+                'Mod',  // Shorter text
                 Icons.sunny,
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8), // Reduced from 10 to 8
             Expanded(
               child: _buildMetricTile(
                 'Visibility',
@@ -1226,10 +1223,10 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
     );
   }
 
-  // Helper method for metric tiles with transparent background
+  // Helper method for metric tiles with transparent background - Modified to prevent overflow
   Widget _buildMetricTile(String title, String value, IconData icon) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6), // Reduced horizontal padding
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(15),
@@ -1239,25 +1236,35 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
         children: [
           Row(
             children: [
-              Icon(icon, color: Colors.white70, size: 16),
-              const SizedBox(width: 4),
-              Text(
-                title.toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: Colors.white70,
-                  fontWeight: FontWeight.w500,
+              Icon(icon, color: Colors.white70, size: 14), // Reduced from 16 to 14
+              const SizedBox(width: 2), // Reduced from 4 to 2
+              Expanded(  // Added Expanded to prevent overflow
+                child: FittedBox(  // Added FittedBox to scale text if needed
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    title.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 10, // Reduced from 11
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+          FittedBox(  // Added FittedBox for value text
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14, // Reduced from 16
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -1494,7 +1501,7 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
     );
   }
 
-  // Build drawer menu (with hourly and history still included but visually marked when active)
+  // Build drawer menu - Fixed bottom overflow
   Widget _buildDrawer() {
     return Drawer(
       child: Container(
@@ -1506,25 +1513,31 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
           ),
         ),
         child: SafeArea(
+          bottom: true, // Ensure safe area at bottom
           child: ListView(
-            padding: EdgeInsets.zero,
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).padding.bottom + 16, // Add extra bottom padding
+            ),
             children: [
-              DrawerHeader(
+              // Replace DrawerHeader with custom container for more flexibility
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.1),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min, // Allow container to size to content
                   children: [
                     const Text(
                       'Weather App',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 24,
+                        fontSize: 22, // Slightly smaller font
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     BlocBuilder<CurrentWeatherBloc, CurrentWeatherState>(
                       builder: (context, state) {
                         String cityName = 'Select location';
@@ -1532,11 +1545,26 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
                             state.data.cityName != null) {
                           cityName = state.data.cityName!;
                         }
-                        return Text(
-                          'Current location: $cityName',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                          ),
+                        return Row(
+                          children: [
+                            const Icon(
+                              Icons.location_on,
+                              color: Colors.white70,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                'Current location: $cityName',
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13, // Smaller font size
+                                ),
+                                overflow: TextOverflow.ellipsis, // Handle text overflow
+                                maxLines: 1, // Limit to one line
+                              ),
+                            ),
+                          ],
                         );
                       },
                     ),
@@ -1544,7 +1572,7 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
                 ),
               ),
 
-              // Drawer items - keeping hourly and history buttons for consistency
+              // ...existing code for drawer items...
               _buildDrawerItem(
                 title: 'Refresh',
                 icon: Icons.refresh,
@@ -1615,18 +1643,21 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
     bool isHighlighted = false,
   }) {
     return ListTile(
+      dense: true, // Make the tile more compact
+      visualDensity: const VisualDensity(horizontal: -1, vertical: -1), // Reduce the visual density
       leading: Icon(icon, color: isHighlighted ? Colors.amber : Colors.white),
       title: Text(
         title,
         style: TextStyle(
           color: isHighlighted ? Colors.amber : Colors.white,
           fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal,
+          fontSize: 14, // Slightly smaller font
         ),
+        overflow: TextOverflow.ellipsis, // Ensure text doesn't overflow
       ),
       onTap: onTap,
       hoverColor: Colors.white.withOpacity(0.1),
       tileColor: Colors.transparent,
-      // Show a subtle indicator for buttons that are also in the header
       trailing: isHighlighted
           ? const Icon(Icons.star, color: Colors.amber, size: 14)
           : null,
