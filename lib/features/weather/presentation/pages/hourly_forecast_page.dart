@@ -40,7 +40,7 @@ class _HourlyForecastPageState extends State<HourlyForecastPage>
     print('BEFORE SORTING - Hourly forecast timestamps:');
     for (var i = 0; i < sortedList.length; i++) {
       print(
-          '${i}: ${sortedList[i].dateTime.toIso8601String()} - ${DateFormat('HH:mm').format(sortedList[i].dateTime)}');
+          '$i: ${sortedList[i].dateTime.toIso8601String()} - ${DateFormat('HH:mm').format(sortedList[i].dateTime)}');
     }
 
     // Sort the list using our compareByDateTime method
@@ -50,7 +50,7 @@ class _HourlyForecastPageState extends State<HourlyForecastPage>
     print('AFTER SORTING - Hourly forecast timestamps:');
     for (var i = 0; i < sortedList.length; i++) {
       print(
-          '${i}: ${sortedList[i].dateTime.toIso8601String()} - ${DateFormat('HH:mm').format(sortedList[i].dateTime)}');
+          '$i: ${sortedList[i].dateTime.toIso8601String()} - ${DateFormat('HH:mm').format(sortedList[i].dateTime)}');
     }
 
     return sortedList;

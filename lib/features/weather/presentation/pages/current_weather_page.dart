@@ -23,6 +23,8 @@ class CurrentWeatherPage extends StatefulWidget {
 
 class _CurrentWeatherPageState extends State<CurrentWeatherPage>
     with TickerProviderStateMixin {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   late AnimationController _animationController;
   late Animation<double> _cloudAnimation;
   late Animation<double> _cloud2Animation;
@@ -41,7 +43,7 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
   bool _stormAlerts = false;
   bool _temperatureAlerts = false;
 
-  // Add animation controller for Lottie movement
+  // Animation controller for Lottie movement
   late AnimationController _lottiePositionController;
   late Animation<double> _lottieXAnimation;
   late Animation<double> _lottieYAnimation;
@@ -782,129 +784,206 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // First row of buttons
+        // Top row with buttons
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            buttonAction(
-              onTap: () {
-                _cityButtonController
-                    .forward()
-                    .then((_) => _cityButtonController.reverse());
-                Navigator.pushNamed(
-                  context,
-                  AppRoute.pickPlace.name,
-                ).then((backResponse) {
-                  if (backResponse == null) return;
-                  if (backResponse == 'refresh') refresh();
-                });
-              },
-              title: 'City',
-              icon: Icons.location_on,
-              animationController: _cityButtonController,
-              scaleAnimation: _cityScaleAnimation,
-              gradient: const LinearGradient(
-                colors: [Color(0xFF64B5F6), Color(0xFF1976D2)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+            // Row of main action buttons (City, Hourly, History)
+            Expanded(
+              child: Row(
+                children: [
+                  // City button with GPS icon
+                  Expanded(
+                    // Make all buttons the same size by using equal flex
+                    flex: 1,
+                    child: BlocBuilder<CurrentWeatherBloc, CurrentWeatherState>(
+                      builder: (context, state) {
+                        String cityName = 'Select City';
+                        if (state is CurrentWeatherLoaded &&
+                            state.data.cityName != null) {
+                          cityName = state.data.cityName!;
+                        }
+
+                        return ScaleTransition(
+                          scale: _cityScaleAnimation,
+                          child: GestureDetector(
+                            onTap: () {
+                              _cityButtonController
+                                  .forward()
+                                  .then((_) => _cityButtonController.reverse());
+                              Navigator.pushNamed(
+                                context,
+                                AppRoute.pickPlace.name,
+                              ).then((backResponse) {
+                                if (backResponse == null) return;
+                                if (backResponse == 'refresh') refresh();
+                              });
+                            },
+                            child: Container(
+                              height: 36, // Fixed height for all buttons
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 8),
+                              margin: const EdgeInsets.only(
+                                  right: 8), // Equal margin
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.center, // Center content
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.location_on,
+                                      color: Colors.white, size: 16),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      cityName,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize:
+                                            12, // Smaller text to fit better
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  // Hourly button
+                  Expanded(
+                    flex: 1, // Equal flex
+                    child: ScaleTransition(
+                      scale: _hourlyScaleAnimation,
+                      child: GestureDetector(
+                        onTap: () {
+                          _hourlyButtonController
+                              .forward()
+                              .then((_) => _hourlyButtonController.reverse());
+                          Navigator.pushNamed(
+                              context, AppRoute.hourlyForecast.name);
+                        },
+                        child: Container(
+                          height: 36, // Same height
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 4), // Equal margin
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisAlignment:
+                                MainAxisAlignment.center, // Center content
+                            children: const [
+                              Icon(Icons.access_time,
+                                  color: Colors.white, size: 16),
+                              SizedBox(width: 4),
+                              Text(
+                                'Hourly',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12, // Consistent font size
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // History button
+                  Expanded(
+                    flex: 1, // Equal flex
+                    child: ScaleTransition(
+                      scale: _historyScaleAnimation,
+                      child: GestureDetector(
+                        onTap: () {
+                          _historyButtonController
+                              .forward()
+                              .then((_) => _historyButtonController.reverse());
+                          _showHistoryPage();
+                        },
+                        child: Container(
+                          height: 36, // Same height
+                          margin:
+                              const EdgeInsets.only(left: 8), // Equal margin
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisAlignment:
+                                MainAxisAlignment.center, // Center content
+                            children: const [
+                              Icon(Icons.history,
+                                  color: Colors.white, size: 16),
+                              SizedBox(width: 4),
+                              Text(
+                                'History',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12, // Consistent font size
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            DView.width(8),
-            buttonAction(
+
+            // Animated hamburger menu button
+            GestureDetector(
               onTap: () {
-                // Add refresh animation effect
+                // Start rotation animation
                 _refreshRotationController.reset();
                 _refreshRotationController.forward();
-                refresh();
+
+                // Short delay before opening drawer for visual effect
+                Future.delayed(const Duration(milliseconds: 200), () {
+                  _scaffoldKey.currentState?.openEndDrawer();
+                });
               },
-              title: 'Refresh',
-              icon: Icons.refresh,
-              customIconWidget: RotationTransition(
-                turns: _refreshRotationAnimation,
-                child: const Icon(
-                  Icons.refresh,
-                  size: 12,
-                  color: Colors.white,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                child: AnimatedBuilder(
+                  animation: _refreshRotationController,
+                  builder: (context, child) {
+                    return Transform.rotate(
+                      angle: _refreshRotationAnimation.value *
+                          0.5 *
+                          3.14, // Rotate up to 90 degrees
+                      child: Transform.scale(
+                        scale: 1.0 -
+                            (_refreshRotationAnimation.value *
+                                0.1), // Subtle scale down effect
+                        child: const Icon(
+                          Icons.menu,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              ),
-              gradient: const LinearGradient(
-                colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ],
-        ),
-        DView.height(8), // Add spacing between rows
-        // Second row of buttons
-        Row(
-          children: [
-            buttonAction(
-              onTap: () {
-                _hourlyButtonController
-                    .forward()
-                    .then((_) => _hourlyButtonController.reverse());
-                Navigator.pushNamed(context, AppRoute.hourlyForecast.name);
-              },
-              title: 'Hourly',
-              icon: Icons.access_time,
-              animationController: _hourlyButtonController,
-              scaleAnimation: _hourlyScaleAnimation,
-              gradient: const LinearGradient(
-                colors: [Color(0xFF9C27B0), Color(0xFF6A1B9A)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            DView.width(8),
-            buttonAction(
-              onTap: () {
-                _notificationButtonController
-                    .forward()
-                    .then((_) => _notificationButtonController.reverse());
-                _showNotificationDialog();
-              },
-              title: 'Alerts',
-              icon: Icons.notifications,
-              animationController: _notificationButtonController,
-              scaleAnimation: _notificationScaleAnimation,
-              gradient: const LinearGradient(
-                colors: [
-                  Color(0xFFFFA726),
-                  Color(0xFFF57C00)
-                ], // Orange gradient
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ],
-        ),
-        DView.height(8),
-        // New third row of buttons
-        Row(
-          children: [
-            buttonAction(
-              onTap: _showHistoryPage,
-              title: 'History',
-              icon: Icons.history,
-              animationController: _historyButtonController,
-              scaleAnimation: _historyScaleAnimation,
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFF7043), Color(0xFFE64A19)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            DView.width(8),
-            buttonAction(
-              onTap: _showSavedLocationsBottomSheet,
-              title: 'Saved',
-              icon: Icons.star,
-              animationController: _savedLocationsButtonController,
-              scaleAnimation: _savedLocationsScaleAnimation,
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFFD54F), Color(0xFFFFC107)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
               ),
             ),
           ],
@@ -913,74 +992,7 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
     );
   }
 
-  Widget buttonAction({
-    required VoidCallback onTap,
-    required String title,
-    required IconData icon,
-    Widget? customIconWidget,
-    required Gradient gradient,
-    AnimationController? animationController,
-    Animation<double>? scaleAnimation,
-  }) {
-    Widget buttonContent = Padding(
-      padding: const EdgeInsets.all(8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.white,
-            ),
-          ),
-          DView.width(4),
-          customIconWidget ?? Icon(icon, size: 12, color: Colors.white),
-        ],
-      ),
-    );
-
-    // If we have animation controllers, wrap in animated builder
-    if (animationController != null && scaleAnimation != null) {
-      buttonContent = AnimatedBuilder(
-        animation: animationController,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: scaleAnimation.value,
-            child: child,
-          );
-        },
-        child: buttonContent,
-      );
-    }
-
-    return Expanded(
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.3),
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 2,
-              offset: const Offset(0, 1),
-            )
-          ],
-          gradient: gradient,
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(30),
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(30),
-            child: buttonContent,
-          ),
-        ),
-      ),
-    );
-  }
-
+  // Modified foreground to include new UI elements with larger last updated text
   Widget foreground() {
     return BlocBuilder<CurrentWeatherBloc, CurrentWeatherState>(
       builder: (context, state) {
@@ -1006,11 +1018,69 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
             physics: const BouncingScrollPhysics(),
             child: Padding(
               key: const Key('weather_loaded'),
-              // Increase bottom padding by 1 more pixel to fix the overflow
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 151),
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 151),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // Enhanced date display with larger last updated text
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        // Date and day in larger text
+                        Text(
+                          DateFormat('EEEE, d MMM').format(DateTime.now()),
+                          style: const TextStyle(
+                            fontSize: 20, // Increased from 18
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                blurRadius: 6,
+                                color: Colors.black26,
+                                offset: Offset(1, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Last updated time - made more prominent
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              const Text(
+                                'LAST UPDATED',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 0.5,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                              Text(
+                                DateFormat('h:mm a').format(DateTime.now()),
+                                style: const TextStyle(
+                                  fontSize: 16, // Increased from 14
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Add city name back above temperature
                   Text(
                     weather.cityName ?? '',
                     style: const TextStyle(
@@ -1026,11 +1096,13 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
                       ],
                     ),
                   ),
+
+                  // Main temperature and description
                   Text(
-                    '- ${weather.main} -',
+                    '${weather.temperature.round()}\u2103',
                     style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.white70,
+                      fontSize: 70,
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
                       shadows: [
                         Shadow(
@@ -1041,15 +1113,17 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
                       ],
                     ),
                   ),
+
                   ExtendedImage.asset(
                     weather.icon,
                     height: 100,
                     width: 100,
                   ),
+
                   Text(
                     weather.description.capitalize,
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 24,
                       color: Colors.white,
                       shadows: [
                         Shadow(
@@ -1060,76 +1134,18 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
                       ],
                     ),
                   ),
-                  Text(
-                    DateFormat('EEEE, d MMM yyyy').format(DateTime.now()),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.white70,
-                      shadows: [
-                        Shadow(
-                          blurRadius: 6,
-                          color: Colors.black26,
-                          offset: Offset(2, 2),
-                        ),
-                      ],
-                    ),
-                  ),
-                  DView.height(20),
-                  Text(
-                    '${weather.temperature.round()}\u2103',
-                    style: const TextStyle(
-                      fontSize: 50,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      shadows: [
-                        Shadow(
-                          blurRadius: 6,
-                          color: Colors.black26,
-                          offset: Offset(2, 2),
-                        ),
-                      ],
-                    ),
-                  ),
-                  DView.height(25), // Further reduced from 30
-                  GridView(
-                    padding: const EdgeInsets.all(0),
-                    physics: const NeverScrollableScrollPhysics(),
-                    shrinkWrap: true,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      // Further reduced to ensure no overflow
-                      mainAxisExtent: 54,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                    ),
-                    children: [
-                      itemStat(
-                        icon: Icons.thermostat,
-                        title: 'Temperature',
-                        data: '${weather.temperature}°C',
-                      ),
-                      itemStat(
-                        icon: Icons.air,
-                        title: 'Wind',
-                        data: '${weather.wind}m/s',
-                      ),
-                      itemStat(
-                        icon: Icons.compare_arrows,
-                        title: 'Pressure',
-                        data: '${NumberFormat.currency(
-                          decimalDigits: 0,
-                          symbol: '',
-                        ).format(weather.pressureSurfaceLevel)}hPa',
-                      ),
-                      itemStat(
-                        icon: Icons.water_drop_outlined,
-                        title: 'Humidity',
-                        data: '${weather.humidity}%',
-                      ),
-                    ],
-                  ),
-                  // Even more bottom padding
+
+                  const SizedBox(height: 30),
+
+                  // New Weather metrics with transparent backgrounds
+                  _buildWeatherMetrics(weather),
+
+                  const SizedBox(height: 30),
+
+                  // New Forecast section (every 4-5 hours)
+                  _buildForecastSection(),
+
+                  // Extra bottom spacing
                   SizedBox(height: MediaQuery.of(context).padding.bottom + 30),
                 ],
               ),
@@ -1141,56 +1157,479 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
     );
   }
 
-  // Make the stat items slightly more compact
-  Widget itemStat({
-    required IconData icon,
-    required String title,
-    required String data,
-  }) {
+  // New method for weather metrics with transparent backgrounds
+  Widget _buildWeatherMetrics(dynamic weather) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // First row of metrics
+        Row(
+          children: [
+            Expanded(
+              child: _buildMetricTile(
+                'Humidity',
+                '${weather.humidity}%',
+                Icons.water_drop_outlined,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildMetricTile(
+                'Wind',
+                '${weather.wind}m/s',
+                Icons.air,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildMetricTile(
+                'Pressure',
+                '${NumberFormat.currency(
+                  decimalDigits: 0,
+                  symbol: '',
+                ).format(weather.pressureSurfaceLevel)}hPa',
+                Icons.compress,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        // Second row with "Feels Like" and other metrics
+        Row(
+          children: [
+            Expanded(
+              child: _buildMetricTile(
+                'Feels Like',
+                '${(weather.temperature - 2).round()}°C', // Approximation for demo
+                Icons.thermostat,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildMetricTile(
+                'UV Index',
+                'Moderate',
+                Icons.sunny,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildMetricTile(
+                'Visibility',
+                '10km',
+                Icons.visibility,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Helper method for metric tiles with transparent background
+  Widget _buildMetricTile(String title, String value, IconData icon) {
     return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(15),
       ),
-      padding: const EdgeInsets.symmetric(
-        vertical: 5, // Further reduced from 6
-        horizontal: 12,
-      ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            backgroundColor: Colors.white,
-            foregroundColor: Theme.of(context).primaryColor,
-            radius: 15, // Further reduced from 16
-            child: Icon(icon, size: 15), // Further reduced from 16
+          Row(
+            children: [
+              Icon(icon, color: Colors.white70, size: 16),
+              const SizedBox(width: 4),
+              Text(
+                title.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
-          DView.width(6),
-          Expanded(
-            // Wrap in Expanded to prevent text overflow
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 11, // Reduced from 12
-                    color: Colors.white70,
-                  ),
-                ),
-                Text(
-                  data,
-                  style: const TextStyle(
-                    fontSize: 13, // Reduced from 14
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  // Modified forecast section to include weather conditions
+  Widget _buildForecastSection() {
+    // Enhanced forecast data with proper weather conditions
+    final List<Map<String, dynamic>> hourlyForecasts = [
+      {
+        'time': '2 PM',
+        'temp': 25,
+        'icon': 'icons/01d.png', 
+        'condition': 'Sunny'
+      },
+      {
+        'time': '6 PM',
+        'temp': 23,
+        'icon': 'icons/02d.png', 
+        'condition': 'Partly Cloudy'
+      },
+      {
+        'time': '10 PM',
+        'temp': 19,
+        'icon': 'icons/01n.png', 
+        'condition': 'Clear'
+      },
+      {
+        'time': '2 AM',
+        'temp': 17,
+        'icon': 'icons/Partly Cloud.png', 
+        'condition': 'Partly Cloudy'
+      },
+      {
+        'time': '6 AM',
+        'temp': 16,
+        'icon': 'icons/10d.png', 
+        'condition': 'Light Rain'
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(left: 4, bottom: 12),
+          child: Text(
+            'FORECAST',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: hourlyForecasts.map((forecast) {
+              return _buildForecastItem(
+                time: forecast['time'],
+                temperature: forecast['temp'],
+                iconPath: forecast['icon'],
+                condition: forecast['condition'],
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Enhanced forecast item to include weather condition text
+  Widget _buildForecastItem({
+    required String time,
+    required int temperature,
+    required String iconPath,
+    required String condition,
+  }) {
+    // Try to use actual weather icons, fall back to Material icons if not found
+    Widget weatherIcon;
+    try {
+      weatherIcon = Image.asset(
+        'assets/$iconPath', 
+        width: 30,
+        height: 30,
+        errorBuilder: (context, error, stackTrace) {
+          print('Failed to load icon: assets/$iconPath - $error');
+          return Icon(
+            _getIconForCondition(condition),
+            color: Colors.white,
+            size: 20,
+          );
+        },
+      );
+    } catch (e) {
+      weatherIcon = Icon(
+        _getIconForCondition(condition),
+        color: Colors.white,
+        size: 20,
+      );
+    }
+
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            time,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.white70,
+            ),
+          ),
+          const SizedBox(height: 6),
+          weatherIcon,
+          const SizedBox(height: 6),
+          Text(
+            '$temperature°',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            condition,
+            style: const TextStyle(
+              fontSize: 10,
+              color: Colors.white70,
+              overflow: TextOverflow.ellipsis,
+            ),
+            maxLines: 1,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method to map weather conditions to icons
+  IconData _getIconForCondition(String condition) {
+    final lowercaseCondition = condition.toLowerCase();
+
+    if (lowercaseCondition.contains('sunny') ||
+        lowercaseCondition.contains('clear')) {
+      return Icons.wb_sunny;
+    } else if (lowercaseCondition.contains('partly cloudy')) {
+      return Icons.wb_cloudy;
+    } else if (lowercaseCondition.contains('cloudy')) {
+      return Icons.cloud;
+    } else if (lowercaseCondition.contains('rain')) {
+      return Icons.water_drop;
+    } else if (lowercaseCondition.contains('storm') ||
+        lowercaseCondition.contains('thunder')) {
+      return Icons.flash_on;
+    } else if (lowercaseCondition.contains('snow')) {
+      return Icons.ac_unit;
+    } else if (lowercaseCondition.contains('fog')) {
+      return Icons.cloud;
+    } else {
+      return Icons.wb_sunny;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      key: _scaffoldKey, // Use the scaffold key to properly access the drawer
+      resizeToAvoidBottomInset: false,
+      // Add End Drawer (Hamburger Menu)
+      endDrawer: _buildDrawer(),
+      body: SafeArea(
+        bottom: true,
+        child: Stack(
+          children: [
+            // Background gradient
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF4A9EF7), Color(0xFFDDEAF9)],
+                ),
+              ),
+            ),
+
+            // Animated background
+            _showLottieAnimation
+                ? _buildLottieAnimation(_getCurrentWeatherDescription())
+                : _buildCustomAnimations(),
+
+            // Shadows
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height / 2,
+                width: double.infinity,
+                child: const BasicShadow(topDown: false),
+              ),
+            ),
+            SizedBox(
+              height: MediaQuery.of(context).size.height / 8,
+              width: double.infinity,
+              child: const BasicShadow(topDown: true),
+            ),
+
+            // UI elements (header and content)
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(
+                    left: 20,
+                    top: 10,
+                    right: 20,
+                  ),
+                  child: headerAction(),
+                ),
+                Expanded(
+                  child: foreground(),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Build drawer menu (with hourly and history still included but visually marked when active)
+  Widget _buildDrawer() {
+    return Drawer(
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF4A9EF7), Color(0xFF1976D2)],
+          ),
+        ),
+        child: SafeArea(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              DrawerHeader(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Weather App',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    BlocBuilder<CurrentWeatherBloc, CurrentWeatherState>(
+                      builder: (context, state) {
+                        String cityName = 'Select location';
+                        if (state is CurrentWeatherLoaded &&
+                            state.data.cityName != null) {
+                          cityName = state.data.cityName!;
+                        }
+                        return Text(
+                          'Current location: $cityName',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+              // Drawer items - keeping hourly and history buttons for consistency
+              _buildDrawerItem(
+                title: 'Refresh',
+                icon: Icons.refresh,
+                onTap: () {
+                  refresh();
+                  Navigator.pop(context);
+                },
+              ),
+              _buildDrawerItem(
+                title: 'Hourly Forecast',
+                icon: Icons.access_time,
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, AppRoute.hourlyForecast.name);
+                },
+                isHighlighted: true, // Highlighted as it's also in the header
+              ),
+              _buildDrawerItem(
+                title: 'Weather History',
+                icon: Icons.history,
+                onTap: () {
+                  Navigator.pop(context);
+                  _showHistoryPage();
+                },
+                isHighlighted: true, // Highlighted as it's also in the header
+              ),
+              _buildDrawerItem(
+                title: 'Saved Locations',
+                icon: Icons.star,
+                onTap: () {
+                  Navigator.pop(context);
+                  _showSavedLocationsBottomSheet();
+                },
+              ),
+              _buildDrawerItem(
+                title: 'Weather Alerts',
+                icon: Icons.notifications,
+                onTap: () {
+                  Navigator.pop(context);
+                  _showNotificationDialog();
+                },
+              ),
+              const Divider(color: Colors.white24),
+              _buildDrawerItem(
+                title: _showLottieAnimation
+                    ? 'Switch to Custom Animation'
+                    : 'Switch to Lottie Animation',
+                icon: _showLottieAnimation
+                    ? Icons.animation_outlined
+                    : Icons.animation,
+                onTap: () {
+                  _toggleAnimationType();
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Updated helper method for drawer items with optional highlight
+  Widget _buildDrawerItem({
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+    bool isHighlighted = false,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: isHighlighted ? Colors.amber : Colors.white),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: isHighlighted ? Colors.amber : Colors.white,
+          fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      onTap: onTap,
+      hoverColor: Colors.white.withOpacity(0.1),
+      tileColor: Colors.transparent,
+      // Show a subtle indicator for buttons that are also in the header
+      trailing: isHighlighted
+          ? const Icon(Icons.star, color: Colors.amber, size: 14)
+          : null,
     );
   }
 
@@ -1891,184 +2330,6 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
 
     // Navigate to the history page using the correct route name
     Navigator.pushNamed(context, AppRoute.weatherDetail.name);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      // Remove extra padding on the screen
-      resizeToAvoidBottomInset: false,
-      body: SafeArea(
-        // Enable bottom safe area to properly handle system UI
-        bottom: true,
-        child: Stack(
-          children: [
-            // FIRST LAYER: Background gradient
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFF4A9EF7), Color(0xFFDDEAF9)],
-                ),
-              ),
-            ),
-
-            // SECOND LAYER: Animated background - The key fix is here!
-            // Moving this up in the stack ensures it's visible beneath other elements
-            _showLottieAnimation
-                ? _buildLottieAnimation(_getCurrentWeatherDescription())
-                : _buildCustomAnimations(),
-
-            // THIRD LAYER: Shadows
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height / 2,
-                width: double.infinity,
-                child: const BasicShadow(topDown: false),
-              ),
-            ),
-            SizedBox(
-              height: MediaQuery.of(context).size.height / 8,
-              width: double.infinity,
-              child: const BasicShadow(topDown: true),
-            ),
-
-            // FOURTH LAYER: UI elements (header and content)
-            Column(
-              children: [
-                Padding(
-                  // Adjust top padding since we're using SafeArea now
-                  padding: const EdgeInsets.only(
-                    left: 20,
-                    top: 10, // Reduced from 20
-                    right: 20,
-                  ),
-                  child: headerAction(),
-                ),
-                Expanded(
-                  child: foreground(),
-                ),
-              ],
-            ),
-
-            // FIFTH LAYER: Animation controls always on top
-            // Redesigned toggle button that better aligns with the weather theme
-            Positioned(
-              top: 200,
-              right: 20,
-              child: Container(
-                height: 70,
-                width: 70,
-                decoration: BoxDecoration(
-                  // Use a weather-themed gradient instead of solid colors
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: _showLottieAnimation
-                        ? [const Color(0xFF48CAE4), const Color(0xFF0096C7)]
-                        : [const Color(0xFF90E0EF), const Color(0xFF48CAE4)],
-                  ),
-                  borderRadius: BorderRadius.circular(35),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 10,
-                      spreadRadius: 1,
-                    ),
-                    BoxShadow(
-                      color: Colors.white.withOpacity(0.2),
-                      blurRadius: 5,
-                      spreadRadius: -1,
-                      offset: const Offset(-2, -2),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(35),
-                    onTap: () {
-                      print(
-                          "ANIMATION TOGGLE PRESSED - Current: $_showLottieAnimation");
-                      setState(() {
-                        _showLottieAnimation = !_showLottieAnimation;
-                      });
-                      // Force rebuild
-                      Future.delayed(Duration.zero, () {
-                        setState(() {});
-                      });
-                    },
-                    child: Center(
-                      child: Icon(
-                        _showLottieAnimation ? Icons.auto_awesome : Icons.waves,
-                        color: Colors.white,
-                        size: 30,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            // Animation mode indicator with weather-themed appearance
-            Positioned(
-              top: 280,
-              right: 20,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  // Use a weather-theme gradient that matches the button
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: _showLottieAnimation
-                        ? [const Color(0xFF48CAE4), const Color(0xFF0096C7)]
-                        : [const Color(0xFF90E0EF), const Color(0xFF48CAE4)],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.25),
-                      blurRadius: 4,
-                      spreadRadius: 0,
-                    ),
-                    BoxShadow(
-                      color: Colors.white.withOpacity(0.1),
-                      blurRadius: 4,
-                      spreadRadius: 0,
-                      offset: const Offset(-1, -1),
-                    )
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      _showLottieAnimation ? Icons.auto_awesome : Icons.waves,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _showLottieAnimation ? "LOTTIE" : "CUSTOM",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
