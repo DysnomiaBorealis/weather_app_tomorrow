@@ -8,8 +8,10 @@ import 'package:weather_app_tommorow/features/weather/data/repositories/weather_
 import 'package:weather_app_tommorow/features/weather/domain/repository/weather_repository.dart';
 import 'package:weather_app_tommorow/features/weather/domain/usecase/get_current_weather_use_case.dart';
 import 'package:weather_app_tommorow/features/weather/domain/usecase/get_hourly_forecast_use_case.dart';
+import 'package:weather_app_tommorow/features/weather/domain/usecase/get_weather_history_use_case.dart';
 import 'package:weather_app_tommorow/features/weather/presentation/bloc/current_weather/current_weather_bloc.dart';
 import 'package:weather_app_tommorow/features/weather/presentation/bloc/hourly_forecast/hourly_forecast_bloc.dart';
+import 'package:weather_app_tommorow/features/weather/presentation/bloc/weather_history/weather_history_bloc.dart';
 
 final locator = GetIt.instance;
 
@@ -18,11 +20,12 @@ Future<void> initLocator() async {
   locator.registerFactory(() => CityCubit(locator()));
   locator.registerFactory(() => CurrentWeatherBloc(locator(), locator()));
   locator.registerFactory(() => HourlyForecastBloc(locator(), locator()));
+  locator.registerFactory(() => WeatherHistoryBloc(locator(), locator()));
 
-  
   // usecase
   locator.registerLazySingleton(() => GetCurrentWeatherUseCase(locator()));
   locator.registerLazySingleton(() => GetHourlyForecastUseCase(locator()));
+  locator.registerLazySingleton(() => GetWeatherHistoryUseCase(locator()));
 
   // datasource
   locator.registerLazySingleton<WeatherRemoteDataSource>(

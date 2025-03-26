@@ -5,7 +5,9 @@ import 'package:weather_app_tommorow/common/enum.dart';
 import 'package:weather_app_tommorow/features/pick_place/presentation/pages/pick_place_page.dart';
 import 'package:weather_app_tommorow/features/weather/presentation/bloc/current_weather/current_weather_bloc.dart';
 import 'package:weather_app_tommorow/features/weather/presentation/bloc/hourly_forecast/hourly_forecast_bloc.dart';
+import 'package:weather_app_tommorow/features/weather/presentation/bloc/weather_history/weather_history_bloc.dart';
 import 'package:weather_app_tommorow/features/weather/presentation/pages/current_weather_page.dart';
+import 'package:weather_app_tommorow/features/weather/presentation/pages/weather_history_page.dart';
 import 'package:weather_app_tommorow/injection.dart';
 import 'package:weather_app_tommorow/features/pick_place/presentation/cubit/city_cubit.dart';
 import 'package:weather_app_tommorow/features/onboarding/pages/onboarding_page.dart';
@@ -27,6 +29,7 @@ class MainApp extends StatelessWidget {
           BlocProvider(create: (context) => locator<CityCubit>()),
           BlocProvider(create: (context) => locator<CurrentWeatherBloc>()),
           BlocProvider(create: (context) => locator<HourlyForecastBloc>()),
+          BlocProvider(create: (context) => locator<WeatherHistoryBloc>())
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
@@ -44,7 +47,7 @@ class MainApp extends StatelessWidget {
             AppRoute.pickPlace.name: (context) => const PickPlacePage(),
             AppRoute.hourlyForecast.name: (context) =>
                 const HourlyForecastPage(),
-            AppRoute.weatherDetail.name: (context) => const Scaffold()
+            AppRoute.weatherDetail.name: (context) => const WeatherHistoryPage()
           },
         ));
   }

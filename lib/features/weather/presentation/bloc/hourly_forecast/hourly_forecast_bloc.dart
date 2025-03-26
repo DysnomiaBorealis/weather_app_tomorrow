@@ -21,7 +21,19 @@ class HourlyForecastBloc
         final result = await _useCase(cityName);
         result.fold(
           (failure) => emit(HourlyForecastFailure(failure.message)),
-          (data) => emit(HourlyForecastLoaded(data)),
+          (data) {
+            // Sort the data by dateTime to ensure chronological order
+            final sortedData = List<WeatherEntity>.from(data)
+              ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+
+            // Debug print timestamps to verify order
+            print('Hourly forecast timestamps sorted:');
+            for (var weather in sortedData) {
+              print('${weather.dateTime}: ${weather.temperature}°C');
+            }
+
+            emit(HourlyForecastLoaded(sortedData));
+          },
         );
       }
     });
