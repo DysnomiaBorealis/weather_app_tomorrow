@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:weather_app_tommorow/common/enum.dart';
 import 'package:weather_app_tommorow/features/pick_place/presentation/pages/pick_place_page.dart';
+import 'package:weather_app_tommorow/features/setting/setting_page.dart';
 import 'package:weather_app_tommorow/features/weather/presentation/bloc/current_weather/current_weather_bloc.dart';
 import 'package:weather_app_tommorow/features/weather/presentation/bloc/hourly_forecast/hourly_forecast_bloc.dart';
 import 'package:weather_app_tommorow/features/weather/presentation/bloc/weather_history/weather_history_bloc.dart';
@@ -47,7 +48,8 @@ class MainApp extends StatelessWidget {
             AppRoute.pickPlace.name: (context) => const PickPlacePage(),
             AppRoute.hourlyForecast.name: (context) =>
                 const HourlyForecastPage(),
-            AppRoute.weatherDetail.name: (context) => const WeatherHistoryPage()
+            AppRoute.weatherDetail.name: (context) => const WeatherHistoryPage(),
+            AppRoute.settings.name : (context) => const SettingPage()
           },
         ));
   }

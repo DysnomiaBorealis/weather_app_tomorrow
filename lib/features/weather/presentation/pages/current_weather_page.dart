@@ -1624,6 +1624,14 @@ class _CurrentWeatherPageState extends State<CurrentWeatherPage>
                   _showNotificationDialog();
                 },
               ),
+              _buildDrawerItem(
+                title: 'Settings',
+                icon: Icons.settings,
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, AppRoute.settings.name);
+                },
+              ),
               const Divider(color: Colors.white24),
               _buildDrawerItem(
                 title: _showLottieAnimation
