@@ -127,7 +127,7 @@ class WeatherRemoteDataSourceImpl implements WeatherRemoteDataSource {
         print('BEFORE SORTING IN DATA SOURCE - Hourly forecast timestamps:');
         for (var i = 0; i < weatherModels.length; i++) {
           print(
-              '${i}: ${weatherModels[i].dateTime.toIso8601String()} - ${weatherModels[i].temperature}°C');
+              '$i: ${weatherModels[i].dateTime.toIso8601String()} - ${weatherModels[i].temperature}°C');
         }
 
         // Sort by dateTime to ensure chronological order
@@ -137,7 +137,7 @@ class WeatherRemoteDataSourceImpl implements WeatherRemoteDataSource {
         print('AFTER SORTING IN DATA SOURCE - Hourly forecast timestamps:');
         for (var i = 0; i < weatherModels.length; i++) {
           print(
-              '${i}: ${weatherModels[i].dateTime.toIso8601String()} - ${weatherModels[i].temperature}°C');
+              '$i: ${weatherModels[i].dateTime.toIso8601String()} - ${weatherModels[i].temperature}°C');
         }
 
         return weatherModels;
