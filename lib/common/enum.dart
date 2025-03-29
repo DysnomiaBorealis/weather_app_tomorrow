@@ -3,5 +3,6 @@ enum AppRoute {
   pickPlace,
   hourlyForecast,
   weatherDetail,
-  currentWeather
+  currentWeather,
+  settings
 }
